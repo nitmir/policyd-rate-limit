@@ -31,27 +31,28 @@ copy an init script to ``/etc/init.d/policyd-rate-limit`` and an unit file to
 After the installation, you may need to run ``sudo systemctl daemon-reload`` for make the unit
 file visible by systemd.
 
-You should ran ``policyd-rate-limit --clean`` on a regular basis to delete old record of the
-database. It could be wise to put it in a daily cron. For example::
+You should ran ``policyd-rate-limit --clean`` on a regular basis to delete old records from the
+database. It could be wise to put it in a daily cron, for example::
 
     0 0 * * * /usr/local/bin/policyd-rate-limit --clean >/dev/null
 
 Settings
 --------
 
-``policyd-rate-limit`` search for is config first in ``~/.config/policyd-rate-limit.conf``
-If not found, then in ``/etc/policyd-rate-limit.conf``. and if not found use the default config.
+``policyd-rate-limit`` search for its config first in ``~/.config/policyd-rate-limit.conf``
+If not found, then in ``/etc/policyd-rate-limit.conf``, and if not found use the default config.
 
 * ``debug``: make ``policyd-rate-limit`` output to stderr all of its exanges with postfix.
   The default is True.
 * ``mysql_config``: The config to connect to a mysql server
 * ``pgsql_config``: The config to connect to a postgreysql server
-* ``sqlite_config``: The config to connect to a sqlite database.
-* ``backend``: Which data backend to use. Possible values are ``0`` for sqlite, ``1`` for mysql
-  and ``2`` for postgreysql. The default is ``0``, use the sqlite backend.
+* ``sqlite_config``: The config to connect to a sqlite3 database.
+* ``backend``: Which data backend to use. Possible values are ``0`` for sqlite3, ``1`` for mysql
+  and ``2`` for postgreysql. The default is ``0``, use the sqlite3 backend.
 * ``SOCKET``: The socket to bind to. Can be a path to an unix socket or a couple (ip, port).
   The default is ``"/var/spool/postfix/ratelimit/policy"``
-* ``socket_permission``: Permissions on the unix socket (if unix socket used)
+* ``socket_permission``: Permissions on the unix socket (if unix socket used).
+  The default is ``0o666``.
 * ``limits``: A list of couple (number of emails, number of seconds). If one of the element of the
   list is exeeded (more than 'number of emails' on 'number of seconds' for an ip address or an sasl
   username), postfix will return a temporary failure.
