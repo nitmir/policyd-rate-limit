@@ -1,0 +1,90 @@
+#!/bin/bash
+### BEGIN INIT INFO
+# Provides:          notifier
+# Required-Start:    $remote_fs $network $syslog $named
+# Required-Stop:     $remote_fs $network $syslog $named
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Irc mail notifier
+### END INIT INFO
+
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE.  See the GNU General Public License version 2 for
+# more details.
+#
+# You should have received a copy of the GNU General Public License version 2
+# along with this program; if not, write to the Free Software Foundation, Inc., 51
+# Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+DAEMON="/usr/local/bin/policyd-rate-limit"
+NAME="policyd-rate-limit"
+DESC="Postfix policyd rate limiter"
+PID_DIR="/var/run/policyd-rate-limit"
+PID="$PID_DIR/policyd-rate-limit.pid"
+USER="policyd-rate-limit"
+
+[ -x $DAEMON ] || exit 0
+
+. /lib/lsb/init-functions
+
+if [ $(id -u) -eq 0 ]; then
+    mkdir -p $PID_DIR
+    chown $USER:$USER $PID_DIR
+fi
+
+stoped(){
+  if [ -f $PID ]; then
+    pid=`cat $PID`
+    if [ `ps -p $pid | wc -l` -eq 2 ]; then
+      return 1
+    fi
+  fi
+  return 0
+}
+
+start(){
+ if $(stoped); then
+  log_daemon_msg "Starting $DESC"
+  /sbin/start-stop-daemon --start --pidfile $PID --user $USER --group $USER -b --chuid $USER --exec $DAEMON -- $ARGS $CONF.conf
+ else
+  log_failure_msg "already running"
+ fi
+}
+
+stop(){
+ if $(stoped); then
+  log_warning_msg "not running"
+ else
+  /sbin/start-stop-daemon --stop --pidfile $PID --verbose --retry 30
+ fi
+}
+
+status(){
+    status_of_proc -p "$PID" "$NAME" "$DESC"
+}
+
+case $1 in
+  start) start $@
+  ;;
+  stop) stop $@
+  ;;
+  restart)
+    stop $@
+    start $@
+  ;;
+  force-reload)
+    stop $@
+    start $@
+  ;;
+  status)
+    status $@
+  ;;
+  *)
+   echo "Usage: $0 {start|stop|restart|force-reload|status}" >&2
+   exit 1
+  ;;
+esac
+
+exit 0
+
