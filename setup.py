@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 from setuptools import setup
 
-import sys
 import os
 
 DESC = """Postfix rate limit policy server implemented in Python3."""
@@ -57,7 +56,9 @@ setup(
     long_description=README,
     author='Valentin Samir',
     author_email='valentin.samir@crans.org',
-    # url='https://launchpad.net/pypolicyd-spf',
+    license='GPLv3',
+    url='https://github.com/nitmir/policyd-rate-limit',
+    download_url="https://github.com/nitmir/policyd-rate-limit/releases",
     packages=['policyd_rate_limit'],
     package_data={
         'policyd_rate_limit': [
@@ -66,7 +67,7 @@ setup(
             'init/policyd-rate-limit.service',
         ]
     },
-    keywords=['Postfix', 'rate limit', 'email'],
+    keywords=['Postfix', 'rate', 'limit', 'email'],
     scripts=['policyd-rate-limit'],
     data_files=data_files,
     classifiers=[
@@ -82,6 +83,3 @@ setup(
     install_requires=["netaddr >= 0.7"],
     zip_safe=False,
 )
-
-if sys.version_info < (2, 6):
-    raise Exception("pypolicyd-spf requires python2.6/2.7 or python3.2 and later.")
