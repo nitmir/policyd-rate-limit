@@ -14,6 +14,7 @@ import sys
 import threading
 import collections
 import netaddr
+import time
 import imp
 
 from policyd_rate_limit.const import SQLITE_DB, MYSQL_BD, PGSQL_BD
@@ -21,15 +22,15 @@ from policyd_rate_limit.const import SQLITE_DB, MYSQL_BD, PGSQL_BD
 
 def import_config():
     if os.path.isfile(os.path.expanduser("~/.config/policyd-rate-limit.conf")):
-        sys.stderr.write(
+        sys.stdout.write(
             'Using config file "%s"\n' % os.path.expanduser("~/.config/policyd-rate-limit.conf")
         )
         config = imp.load_source('config', os.path.expanduser("~/.config/policyd-rate-limit.conf"))
     elif os.path.isfile("/etc/policyd-rate-limit.conf"):
-        sys.stderr.write('Using config file "/etc/policyd-rate-limit.conf"\n')
+        sys.stdout.write('Using config file "/etc/policyd-rate-limit.conf"\n')
         config = imp.load_source('config', "/etc/policyd-rate-limit.conf")
     else:
-        sys.stderr.write("No config file found, using default config")
+        sys.stdout.write("No config file found, using default config")
         from policyd_rate_limit import config
     return config
 
@@ -143,3 +144,13 @@ with cursor() as cur:
 
 
 config.limited_netword = [netaddr.IPNetwork(net) for net in config.limited_netword]
+
+
+def clean():
+    max_delta = 0
+    for nb, delta in config.limits:
+        max_delta = max(max_delta, delta)
+    expired = int(time.time() - max_delta - max_delta)
+    with cursor() as cur:
+        cur.execute("DELETE FROM mail_count WHERE date <= %s" % format_str, (expired,))
+        print("%d records deleted" % cur.rowcount)

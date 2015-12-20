@@ -31,6 +31,11 @@ copy an init script to ``/etc/init.d/policyd-rate-limit`` and an unit file to
 After the installation, you may need to run ``sudo systemctl daemon-reload`` for make the unit
 file visible by systemd.
 
+You should ran ``policyd-rate-limit --clean`` on a regular basis to delete old record of the
+database. It could be wise to put it in a daily cron. For example::
+
+    0 0 * * * /usr/local/bin/policyd-rate-limit --clean >/dev/null
+
 Settings
 --------
 

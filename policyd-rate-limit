@@ -11,22 +11,29 @@
 #
 # (c) 2015 Valentin Samir
 import os
+import sys
 from policyd_rate_limit.policyd import Policyd
+from policyd_rate_limit.utils import clean
+
 
 if __name__ == "__main__":
-    try:
-        with open("/var/run//policyd-rate-limit/policyd-rate-limit.pid", 'w') as f:
-            f.write("%s" % os.getpid())
-    except PermissionError:
-        pass
-    p = Policyd()
-    p.socket()
-    try:
-        p.run()
-    except KeyboardInterrupt:
-        pass
-    p.sock.close()
-    try:
-        os.remove("/var/run/policyd-ratelimit.pid")
-    except OSError:
-        pass
+    if "--clean" in sys.argv[1:]:
+        clean()
+        sys.exit(0)
+    else:
+        try:
+            with open("/var/run/policyd-rate-limit/policyd-rate-limit.pid", 'w') as f:
+                f.write("%s" % os.getpid())
+        except PermissionError:
+            pass
+        p = Policyd()
+        p.socket()
+        try:
+            p.run()
+        except KeyboardInterrupt:
+            pass
+        p.sock.close()
+        try:
+            os.remove("/var/run/policyd-rate-limit/policyd-rate-limit.pid")
+        except OSError:
+            pass
