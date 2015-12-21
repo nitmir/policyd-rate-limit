@@ -12,6 +12,10 @@ from policyd_rate_limit.const import SQLITE_DB, MYSQL_BD, PGSQL_BD
 
 debug = True
 
+user = "policyd-rate-limit"
+group = "policyd-rate-limit"
+pidfile = "/var/run/policyd-rate-limit/policyd-rate-limit.pid"
+
 mysql_config = {
     "user": "username",
     "passwd": "*****",

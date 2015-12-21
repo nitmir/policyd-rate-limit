@@ -12,28 +12,42 @@
 # (c) 2015 Valentin Samir
 import os
 import sys
+import argparse
 from policyd_rate_limit.policyd import Policyd
-from policyd_rate_limit.utils import clean
+from policyd_rate_limit import utils
+from policyd_rate_limit.utils import config
 
 
 if __name__ == "__main__":
-    if "--clean" in sys.argv[1:]:
-        clean()
-        sys.exit(0)
+    if os.getuid() == 0:
+        try:
+            utils.make_directories()
+            utils.drop_privileges()
+        except ValueError as error:
+            sys.stderr.write("%s\n" % error)
+            sys.exit(2)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--clean", help="clean old records from the database", action="store_true")
+    parser.add_argument("--get_config", help="return the value of a config parameter")
+    args = parser.parse_args()
+    if args.get_config:
+        try:
+            sys.stdout.write(getattr(config, args.get_config))
+        except AttributeError:
+            sys.stderr.write("%s not found\n" % args.get_config)
+            sys.exit(1)
     else:
-        try:
-            with open("/var/run/policyd-rate-limit/policyd-rate-limit.pid", 'w') as f:
-                f.write("%s" % os.getpid())
-        except PermissionError:
-            pass
-        p = Policyd()
-        p.socket()
-        try:
-            p.run()
-        except KeyboardInterrupt:
-            pass
-        p.sock.close()
-        try:
-            os.remove("/var/run/policyd-rate-limit/policyd-rate-limit.pid")
-        except OSError:
-            pass
+        utils.database_init()
+        if args.clean:
+            utils.clean()
+        else:
+            utils.write_pidfile()
+            p = Policyd()
+            p.socket()
+            try:
+                p.run()
+            except KeyboardInterrupt:
+                pass
+            p.close_socket()
+            utils.remove_pidfile()
+

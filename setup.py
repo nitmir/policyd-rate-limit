@@ -29,21 +29,7 @@ if os.getuid() == 0:
         'policyd_rate_limit/init/policyd-rate-limit.service',
         check_dir=True
     )
-    try:
-        os.mkdir("/var/lib/policyd-rate-limit")
-    except OSError:
-        pass
-    try:
-        os.mkdir("/var/spool/postfix/ratelimit/")
-    except OSError:
-        pass
-    os.system("useradd policyd-rate-limit -d /var/lib/policyd-rate-limit")
-    os.system(
-        "chown policyd-rate-limit:policyd-rate-limit "
-        "/var/lib/policyd-rate-limit "
-        "/var/spool/postfix/ratelimit/"
-    )
-# else user user .config dir
+# else use user .config dir
 else:
     conf_dir = os.path.expanduser("~/.config/")
     add_data_file(conf_dir, 'policyd_rate_limit/policyd-rate-limit.conf', mkdir=True)
@@ -51,7 +37,7 @@ else:
 
 setup(
     name='policyd-rate-limit',
-    version='0.2',
+    version='0.3',
     description=DESC,
     long_description=README,
     author='Valentin Samir',

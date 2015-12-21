@@ -41,6 +41,14 @@ class Policyd(object):
             raise ValueError("bad socket %s" % config.SOCKET)
         self.sock = sock
 
+    def close_socket(self):
+        self.sock.close()
+        if isinstance(config.SOCKET, str):
+            try:
+                os.remove(config.SOCKET)
+            except OSError as error:
+                sys.stderr.write("%s\n" % error)
+
     def run(self):
         sock = self.sock
         sock.bind(config.SOCKET)

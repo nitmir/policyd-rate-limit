@@ -22,18 +22,11 @@
 DAEMON="/usr/local/bin/policyd-rate-limit"
 NAME="policyd-rate-limit"
 DESC="Postfix policyd rate limiter"
-PID_DIR="/var/run/policyd-rate-limit"
-PID="$PID_DIR/policyd-rate-limit.pid"
-USER="policyd-rate-limit"
+PID="$($DAEMON --get_config pidfile)"
 
 [ -x $DAEMON ] || exit 0
 
 . /lib/lsb/init-functions
-
-if [ $(id -u) -eq 0 ]; then
-    mkdir -p $PID_DIR
-    chown $USER:$USER $PID_DIR
-fi
 
 stoped(){
   if [ -f $PID ]; then
@@ -48,7 +41,7 @@ stoped(){
 start(){
  if $(stoped); then
   log_daemon_msg "Starting $DESC"
-  /sbin/start-stop-daemon --start --pidfile $PID --user $USER --group $USER -b --chuid $USER --exec $DAEMON -- $ARGS $CONF.conf
+  /sbin/start-stop-daemon --start --pidfile $PID -b --exec $DAEMON
  else
   log_failure_msg "already running"
  fi

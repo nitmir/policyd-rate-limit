@@ -4,16 +4,10 @@ After=syslog.target
 
 [Service]
 Type=simple
-User=policyd-rate-limit
-Group=policyd-rate-limit
-WorkingDirectory=/var/lib/policyd-rate-limit
-PermissionsStartOnly=true
-ExecStartPre=/bin/mkdir -p /var/run/policyd-rate-limit
-ExecStartPre=/bin/chown policyd-rate-limit:policyd-rate-limit /var/run/policyd-rate-limit
 ExecStart=/usr/local/bin/policyd-rate-limit
+KillSignal=SIGINT
 StandardOutput=syslog
 StandardError=syslog
-PIDFile=/var/run/policyd-rate-limit/policyd-rate-limit.pid
 
 [Install]
 WantedBy=multi-user.target

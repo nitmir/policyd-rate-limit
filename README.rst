@@ -15,13 +15,18 @@ postfix over severals time periods, by sasl usernames and/or ip addresses.
 Installation
 ------------
 
+First, create the user that will run the daemon and its home directory::
+
+    mkdir -p /var/lib/policyd-rate-limit
+    useradd policyd-rate-limit -d /var/lib/policyd-rate-limit
+
 Install with pip::
 
     sudo pip3 install policyd-rate-limit
 
-Install from source code::
+or from source code::
 
-    sudo python3 setup.py install
+    sudo make install
 
 This will install the ``policyd_rate_limit`` module, the ``policyd-rate-limit`` binary,
 copy the default config to ``/etc/policyd-rate-limit.conf`` if the file do not exists,
@@ -34,7 +39,7 @@ file visible by systemd.
 You should ran ``policyd-rate-limit --clean`` on a regular basis to delete old records from the
 database. It could be wise to put it in a daily cron, for example::
 
-    0 0 * * * /usr/local/bin/policyd-rate-limit --clean >/dev/null
+    0 0 * * * policyd-rate-limit /usr/local/bin/policyd-rate-limit --clean >/dev/null
 
 Settings
 --------

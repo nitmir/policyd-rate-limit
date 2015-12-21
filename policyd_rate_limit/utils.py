@@ -16,26 +16,79 @@ import collections
 import netaddr
 import time
 import imp
+import pwd
+import grp
 
 from policyd_rate_limit.const import SQLITE_DB, MYSQL_BD, PGSQL_BD
+from policyd_rate_limit import config as default_config
 
 
-def import_config():
-    if os.path.isfile(os.path.expanduser("~/.config/policyd-rate-limit.conf")):
-        sys.stdout.write(
-            'Using config file "%s"\n' % os.path.expanduser("~/.config/policyd-rate-limit.conf")
-        )
-        config = imp.load_source('config', os.path.expanduser("~/.config/policyd-rate-limit.conf"))
-    elif os.path.isfile("/etc/policyd-rate-limit.conf"):
-        sys.stdout.write('Using config file "/etc/policyd-rate-limit.conf"\n')
-        config = imp.load_source('config', "/etc/policyd-rate-limit.conf")
-    else:
-        sys.stdout.write("No config file found, using default config")
-        from policyd_rate_limit import config
-    return config
+class Config(object):
+    """Act as a config module, missing parameters fallbacks to default_config"""
+    def __init__(self):
+        config_files = [
+            os.path.expanduser("~/.config/policyd-rate-limit.conf"),
+            "/etc/policyd-rate-limit.conf",
+        ]
+        for config_file in config_files:
+            if os.path.isfile(config_file):
+                # sys.stdout.write('Using config file "%s"\n' % config_file)
+                self.config = imp.load_source('config', config_file)
+                break
+        else:
+            sys.stdout.write("No config file found, using default config")
+            self.config = default_config
+
+        self.limited_netword = [netaddr.IPNetwork(net) for net in self.limited_netword]
+
+    def __getattr__(self, name):
+        try:
+            return getattr(self.config, name)
+        except AttributeError:
+            return getattr(default_config, name)
 
 
-config = import_config()
+def make_directories():
+    """Create directory for pid and socket and chown if needed"""
+    try:
+        uid = pwd.getpwnam(config.user).pw_uid
+    except KeyError:
+        raise ValueError("User %s in config do not exists" % config.user)
+    try:
+        gid = grp.getgrnam(config.group).gr_gid
+    except KeyError:
+        raise ValueError("Group %s in config do not exists" % config.group)
+    pid_dir = os.path.dirname(config.pidfile)
+    if not os.path.exists(pid_dir):
+        os.mkdir(pid_dir)
+    if not os.listdir(pid_dir):
+        os.chown(pid_dir, uid, gid)
+    if isinstance(config.SOCKET, str):
+        socket_dir = os.path.dirname(config.SOCKET)
+        if not os.path.exists(socket_dir):
+            os.mkdir(socket_dir)
+        if not os.listdir(socket_dir):
+            os.chown(socket_dir, uid, gid)
+
+
+def drop_privileges():
+    if os.getuid() != 0:
+        # We're not root so, like, whatever dude
+        return
+
+    # Get the uid/gid from the name
+    running_uid = pwd.getpwnam(config.user).pw_uid
+    running_gid = grp.getgrnam(config.group).gr_gid
+
+    # Remove group privileges
+    os.setgroups([])
+
+    # Try setting the new uid/gid
+    os.setgid(running_gid)
+    os.setuid(running_uid)
+
+    # Ensure a very conservative umask
+    os.umask(0o077)
 
 
 def make_cursor(name, backend, config):
@@ -118,6 +171,48 @@ def is_ip_limited(ip):
             return True
     return False
 
+
+def clean():
+    max_delta = 0
+    for nb, delta in config.limits:
+        max_delta = max(max_delta, delta)
+    expired = int(time.time() - max_delta - max_delta)
+    with cursor() as cur:
+        cur.execute("DELETE FROM mail_count WHERE date <= %s" % format_str, (expired,))
+        print("%d records deleted" % cur.rowcount)
+
+
+def database_init():
+    with cursor() as cur:
+        query = """CREATE TABLE IF NOT EXISTS "mail_count" (
+      "id" varchar(40) NOT NULL,
+      "date" int(32) NOT NULL
+    );"""
+        cur.execute(query)
+        try:
+            cur.execute('CREATE INDEX mail_count_index ON mail_count(id, date)')
+        except cursor.backend_module.Error as error:
+            if error.args[0] == 'index mail_count_index already exists':
+                pass
+
+
+def write_pidfile():
+    try:
+        with open(config.pidfile, 'w') as f:
+            f.write("%s" % os.getpid())
+    except PermissionError:
+        pass
+
+
+def remove_pidfile():
+    try:
+        os.remove(config.pidfile)
+    except OSError:
+        pass
+
+
+config = Config()
+
 if config.backend == SQLITE_DB:
     cursor = make_cursor("sqlite_cursor", config.backend, config.sqlite_config)
     format_str = "?"
@@ -130,27 +225,6 @@ elif config.backend == PGSQL_BD:
 else:
     raise RuntimeError("backend %s unknown" % config.backend)
 
-with cursor() as cur:
-    query = """CREATE TABLE IF NOT EXISTS "mail_count" (
-  "id" varchar(40) NOT NULL,
-  "date" int(32) NOT NULL
-);"""
-    cur.execute(query)
-    try:
-        cur.execute('CREATE INDEX mail_count_index ON mail_count(id, date)')
-    except cursor.backend_module.Error as error:
-        if error.args[0] == 'index mail_count_index already exists':
-            pass
 
 
-config.limited_netword = [netaddr.IPNetwork(net) for net in config.limited_netword]
 
-
-def clean():
-    max_delta = 0
-    for nb, delta in config.limits:
-        max_delta = max(max_delta, delta)
-    expired = int(time.time() - max_delta - max_delta)
-    with cursor() as cur:
-        cur.execute("DELETE FROM mail_count WHERE date <= %s" % format_str, (expired,))
-        print("%d records deleted" % cur.rowcount)
