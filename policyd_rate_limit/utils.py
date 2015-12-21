@@ -19,7 +19,7 @@ import imp
 import pwd
 import grp
 
-from policyd_rate_limit.const import SQLITE_DB, MYSQL_BD, PGSQL_BD
+from policyd_rate_limit.const import SQLITE_DB, MYSQL_DB, PGSQL_DB
 from policyd_rate_limit import config as default_config
 
 
@@ -92,11 +92,11 @@ def drop_privileges():
 
 
 def make_cursor(name, backend, config):
-    if backend == MYSQL_BD:
+    if backend == MYSQL_DB:
         import MySQLdb
         methods = {
              '_db': collections.defaultdict(lambda: MySQLdb.connect(**config)),
-             'backend': MYSQL_BD,
+             'backend': MYSQL_DB,
              'backend_module': MySQLdb,
          }
     elif backend == SQLITE_DB:
@@ -106,11 +106,11 @@ def make_cursor(name, backend, config):
              'backend': SQLITE_DB,
              'backend_module': sqlite3,
          }
-    elif backend == PGSQL_BD:
+    elif backend == PGSQL_DB:
         import psycopg2
         methods = {
              '_db': collections.defaultdict(lambda: psycopg2.connect(**config)),
-             'backend': PGSQL_BD,
+             'backend': PGSQL_DB,
              'backend_module': psycopg2,
          }
     else:
@@ -144,9 +144,9 @@ class _cursor(object):
 
     def __enter__(self):
         self.cur = self.get_db().cursor()
-        if self.backend in [MYSQL_BD, PGSQL_BD]:
+        if self.backend in [MYSQL_DB, PGSQL_DB]:
             try:
-                if self.backend == MYSQL_BD:
+                if self.backend == MYSQL_DB:
                     self.cur.execute("DO 0")
                 else:
                     self.cur.execute("SELECT 0")
@@ -184,9 +184,9 @@ def clean():
 
 def database_init():
     with cursor() as cur:
-        query = """CREATE TABLE IF NOT EXISTS "mail_count" (
-      "id" varchar(40) NOT NULL,
-      "date" int(32) NOT NULL
+        query = """CREATE TABLE IF NOT EXISTS mail_count (
+      id varchar(40) NOT NULL,
+      date int(32) NOT NULL
     );"""
         cur.execute(query)
         try:
@@ -216,10 +216,10 @@ config = Config()
 if config.backend == SQLITE_DB:
     cursor = make_cursor("sqlite_cursor", config.backend, config.sqlite_config)
     format_str = "?"
-elif config.backend == MYSQL_BD:
+elif config.backend == MYSQL_DB:
     cursor = make_cursor("mysql_cursor", config.backend, config.mysql_config)
     format_str = "%s"
-elif config.backend == PGSQL_BD:
+elif config.backend == PGSQL_DB:
     cursor = make_cursor("pgsql_cursor", config.backend, config.pgsql_config)
     format_str = "%s"
 else:

@@ -9,5 +9,5 @@
 #
 # (c) 2015 Valentin Samir
 SQLITE_DB = 0
-MYSQL_BD = 1
-PGSQL_BD = 2
+MYSQL_DB = 1
+PGSQL_DB = 2
