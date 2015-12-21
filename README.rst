@@ -9,7 +9,7 @@ Policyd rate limit
     :target: https://www.gnu.org/licenses/gpl-3.0.html
 
 Postfix policyd server allowing to limit the number of mail accepted by
-postfix over severals time periods, by sasl usernames and/or ip addresses.
+postfix over several time periods, by sasl usernames and/or ip addresses.
 
 
 Installation
@@ -19,6 +19,14 @@ First, create the user that will run the daemon and its home directory::
 
     mkdir -p /var/lib/policyd-rate-limit
     useradd policyd-rate-limit -d /var/lib/policyd-rate-limit
+
+Depending of the backend storage you planning to use, you may need to install additional packages.
+(The default settings use the sqlite3 bakends and do not need extra packages).
+
+* `mysqldb <https://github.com/PyMySQL/mysqlclient-python>`_
+  (``sudo apt-get install python3-mysqldb`` on debian like systems) for the mysql backend.
+* `psycopg2 <https://pypi.python.org/pypi/psycopg2>`_
+  (``sudo apt-get install python3-psycopg2`` on debian like systems) fot the postgreysql backend
 
 Install with pip::
 
