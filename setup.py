@@ -23,10 +23,10 @@ def add_data_file(dir, file, check_dir=False, mkdir=False):
 # if install as root populate /etc
 if os.getuid() == 0:
     add_data_file("/etc", 'policyd_rate_limit/policyd-rate-limit.conf')
-    add_data_file('/etc/init.d', 'policyd_rate_limit/init/policyd-rate-limit')
+    add_data_file('/etc/init.d', 'init/policyd-rate-limit')
     add_data_file(
         "/etc/systemd/system",
-        'policyd_rate_limit/init/policyd-rate-limit.service',
+        'init/policyd-rate-limit.service',
         check_dir=True
     )
 # else use user .config dir
@@ -37,7 +37,7 @@ else:
 
 setup(
     name='policyd-rate-limit',
-    version='0.3.2',
+    version='0.3.3',
     description=DESC,
     long_description=README,
     author='Valentin Samir',
@@ -49,8 +49,6 @@ setup(
     package_data={
         'policyd_rate_limit': [
             'policyd-rate-limit.conf',
-            'init/policyd-rate-limit',
-            'init/policyd-rate-limit.service',
         ]
     },
     keywords=['Postfix', 'rate', 'limit', 'email'],

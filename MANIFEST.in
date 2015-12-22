@@ -1,0 +1,4 @@
+include LICENSE
+include README.rst
+include init/policyd-rate-limit.service
+include init/policyd-rate-limit

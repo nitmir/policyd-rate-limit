@@ -52,3 +52,7 @@ limit_by_ip = False
 
 limited_netword = [
 ]
+
+# actions return to postfix, see http://www.postfix.org/access.5.html for a list of actions.
+success_action = "dunno"
+fail_action = "defer_if_permit"

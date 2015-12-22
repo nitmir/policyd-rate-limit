@@ -90,7 +90,7 @@ class Policyd(object):
 
     def action(self, connection, request):
         id = None
-        action = u"ok"
+        action = config.success_action
         with cursor() as cur:
             try:
                 if config.limit_by_sasl and u'sasl_username' in request:
@@ -113,11 +113,11 @@ class Policyd(object):
                     ):
                         nb = cur.fetchone()[0]
                         if nb >= mail_nb:
-                            action = u"defer_if_permit Rate limit reach, retry later"
+                            action = u"%s Rate limit reach, retry later" % config.fail_action
                             raise Pass()
             except Pass:
                 pass
-            if action == u"ok" and id is not None:
+            if action == config.success_action and id is not None:
                 if config.debug:
                     sys.stderr.write(u"insert id %s\n" % id)
                 cur.execute(
