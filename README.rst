@@ -81,7 +81,10 @@ If not found, then in ``/etc/policyd-rate-limit.conf``, and if not found use the
 * ``limit_by_ip``: Apply limits by ip addresses. The default is ``False``.
 * ``limited_netword``: A list of ip networks in cidr notation on which limits are applied. An empty
   list is equal to ``limit_by_ip = False``, put ``"0.0.0.0/0"`` and ``::/0`` for every ip addresses.
-
+* ``success_action``: If not limits are reach, which action postfix should do. The default is
+  ``"dunno"``. See http://www.postfix.org/access.5.html for possible actions.
+* ``fail_action``: If a limit is reach, which action postfix should do. The default is
+  ``"defer_if_permit"``. See http://www.postfix.org/access.5.html for possible actions.
 
 
 
