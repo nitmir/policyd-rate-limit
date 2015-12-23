@@ -42,6 +42,7 @@ start(){
  if $(stoped); then
   log_daemon_msg "Starting $DESC"
   /sbin/start-stop-daemon --start --pidfile $PID -b --exec $DAEMON
+  log_end_msg $?
  else
   log_failure_msg "already running"
  fi
@@ -51,7 +52,9 @@ stop(){
  if $(stoped); then
   log_warning_msg "not running"
  else
-  /sbin/start-stop-daemon --stop --pidfile $PID --verbose --retry 30
+  log_daemon_msg "Stopping $DESC"
+  /sbin/start-stop-daemon --stop --pidfile $PID --retry 30
+  log_end_msg $?
  fi
 }
 
