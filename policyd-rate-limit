@@ -19,10 +19,13 @@ from policyd_rate_limit.utils import config
 
 
 if __name__ == "__main__":
+    # if policyd-rate-limit was lauch by root, try creating piddir and socket dir then,
+    # drop privileges
     if os.getuid() == 0:
         try:
             utils.make_directories()
             utils.drop_privileges()
+        # if user/group from config do not exists, a ValueError is raised and we exit.
         except ValueError as error:
             sys.stderr.write("%s\n" % error)
             sys.exit(2)
@@ -30,38 +33,61 @@ if __name__ == "__main__":
     parser.add_argument("--clean", help="clean old records from the database", action="store_true")
     parser.add_argument("--get_config", help="return the value of a config parameter")
     args = parser.parse_args()
+    # ask for the value of a config param, print it and exit
     if args.get_config:
         try:
             sys.stdout.write(getattr(config, args.get_config))
         except AttributeError:
             sys.stderr.write("%s not found\n" % args.get_config)
             sys.exit(1)
+    # else we gonna need the database so we initialize it
     else:
         utils.database_init()
+        # if database cleaning requested, remove old records and exit
         if args.clean:
             utils.clean()
+        # else we gonna lauch the policyd daemon
         else:
+            # we check if policyd-rate-limit is not already running by lookig at config.pidfile
             try:
+                # read the pid from pidfile (on clean exit policyd-rate-limit remote its pid file
+                # so if it exists either policyd-rate-limit is already running or has crashed)
                 if os.path.isfile(config.pidfile):
                     with open(config.pidfile) as f:
                         pid = int(f.read().strip())
-                    os.kill(pid, 0)
-                    sys.stderr.write(
-                        (
-                            "policyd-rate-limit seems to be already running according to "
-                            "the pid in the file %s. Exiting.\n"
-                        ) % config.pidfile
-                    )
-                    sys.exit(3)
-            except (ValueError, OSError):
+                    try:
+                        # should raise OSError(3) if not process found and success if found
+                        os.kill(pid, 0)
+                        # no exception raised so the pid in pidfile is still running, we display a
+                        # error message and exit.
+                        sys.stderr.write(
+                            (
+                                "policyd-rate-limit seems to be already running according to "
+                                "the pid in the file %s. Exiting.\n"
+                            ) % config.pidfile
+                        )
+                        sys.exit(3)
+                    except OSError as error:
+                        if error.errno != 3:  # No such process
+                            raise
+            # unable to read the pid from pidfile, so we continue
+            except ValueError:
                 pass
-            utils.write_pidfile()
-            p = Policyd()
-            p.socket()
             try:
-                p.run()
-            except KeyboardInterrupt:
-                pass
-            p.close_socket()
-            utils.remove_pidfile()
+                # we try to write our pid. On failure a ValueError is raised
+                utils.write_pidfile()
+                try:
+                    p = Policyd()
+                    p.socket()
+                    try:
+                        p.run()
+                    except KeyboardInterrupt:
+                        pass
+                    finally:
+                        p.close_socket()
+                finally:
+                    utils.remove_pidfile()
+            except ValueError as error:
+                sys.stderr.write("%s\n" % error)
+                sys.exit(4)
 

@@ -26,6 +26,7 @@ from policyd_rate_limit import config as default_config
 class Config(object):
     """Act as a config module, missing parameters fallbacks to default_config"""
     def __init__(self):
+        # search for config files in the following locations
         config_files = [
             os.path.expanduser("~/.config/policyd-rate-limit.conf"),
             "/etc/policyd-rate-limit.conf",
@@ -35,6 +36,7 @@ class Config(object):
                 # sys.stdout.write('Using config file "%s"\n' % config_file)
                 self.config = imp.load_source('config', config_file)
                 break
+        # if not config file found, fallback to default config.
         else:
             sys.stdout.write("No config file found, using default config")
             self.config = default_config
@@ -44,6 +46,7 @@ class Config(object):
     def __getattr__(self, name):
         try:
             return getattr(self.config, name)
+        # If an parameter is not defined in the config file, return its default value.
         except AttributeError:
             return getattr(default_config, name)
 
@@ -92,6 +95,7 @@ def drop_privileges():
 
 
 def make_cursor(name, backend, config):
+    """Create a cursor class usable as a context manager, binding to the backend selected"""
     if backend == MYSQL_DB:
         import MySQLdb
         methods = {
@@ -120,6 +124,7 @@ def make_cursor(name, backend, config):
 
 
 class _cursor(object):
+    """cursor template class"""
     backend = None
     backend_module = None
 
@@ -173,9 +178,11 @@ def is_ip_limited(ip):
 
 
 def clean():
+    """Delete old records from the database"""
     max_delta = 0
     for nb, delta in config.limits:
         max_delta = max(max_delta, delta)
+    # remove old record older than 2*max_delta
     expired = int(time.time() - max_delta - max_delta)
     with cursor() as cur:
         cur.execute("DELETE FROM mail_count WHERE date <= %s" % format_str, (expired,))
@@ -183,6 +190,7 @@ def clean():
 
 
 def database_init():
+    """Initialize database (create the table and index)"""
     with cursor() as cur:
         query = """CREATE TABLE IF NOT EXISTS mail_count (
       id varchar(40) NOT NULL,
@@ -200,8 +208,8 @@ def write_pidfile():
     try:
         with open(config.pidfile, 'w') as f:
             f.write("%s" % os.getpid())
-    except PermissionError:
-        pass
+    except PermissionError as error:
+        raise ValueError("Unable to write pid file, %s." % error)
 
 
 def remove_pidfile():
@@ -211,8 +219,10 @@ def remove_pidfile():
         pass
 
 
+# initialize config
 config = Config()
 
+# make the cursor class function of the configured backend
 if config.backend == SQLITE_DB:
     cursor = make_cursor("sqlite_cursor", config.backend, config.sqlite_config)
     format_str = "?"
