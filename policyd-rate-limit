@@ -41,6 +41,20 @@ if __name__ == "__main__":
         if args.clean:
             utils.clean()
         else:
+            try:
+                if os.path.isfile(config.pidfile):
+                    with open(config.pidfile) as f:
+                        pid = int(f.read().strip())
+                    os.kill(pid, 0)
+                    sys.stderr.write(
+                        (
+                            "policyd-rate-limit seems to be already running according to "
+                            "the pid in the file %s. Exiting.\n"
+                        ) % config.pidfile
+                    )
+                    sys.exit(3)
+            except (ValueError, OSError):
+                pass
             utils.write_pidfile()
             p = Policyd()
             p.socket()
