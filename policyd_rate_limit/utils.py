@@ -65,6 +65,7 @@ def make_directories():
     if not os.path.exists(pid_dir):
         os.mkdir(pid_dir)
     if not os.listdir(pid_dir):
+        os.chmod(pid_dir, 0o755)
         os.chown(pid_dir, uid, gid)
     if isinstance(config.SOCKET, str):
         socket_dir = os.path.dirname(config.SOCKET)
