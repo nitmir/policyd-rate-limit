@@ -90,4 +90,3 @@ if __name__ == "__main__":
             except ValueError as error:
                 sys.stderr.write("%s\n" % error)
                 sys.exit(4)
-

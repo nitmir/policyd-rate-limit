@@ -100,24 +100,24 @@ def make_cursor(name, backend, config):
     if backend == MYSQL_DB:
         import MySQLdb
         methods = {
-             '_db': collections.defaultdict(lambda: MySQLdb.connect(**config)),
-             'backend': MYSQL_DB,
-             'backend_module': MySQLdb,
-         }
+            '_db': collections.defaultdict(lambda: MySQLdb.connect(**config)),
+            'backend': MYSQL_DB,
+            'backend_module': MySQLdb,
+        }
     elif backend == SQLITE_DB:
         import sqlite3
         methods = {
-             '_db': collections.defaultdict(lambda: sqlite3.connect(**config)),
-             'backend': SQLITE_DB,
-             'backend_module': sqlite3,
-         }
+            '_db': collections.defaultdict(lambda: sqlite3.connect(**config)),
+            'backend': SQLITE_DB,
+            'backend_module': sqlite3,
+        }
     elif backend == PGSQL_DB:
         import psycopg2
         methods = {
-             '_db': collections.defaultdict(lambda: psycopg2.connect(**config)),
-             'backend': PGSQL_DB,
-             'backend_module': psycopg2,
-         }
+            '_db': collections.defaultdict(lambda: psycopg2.connect(**config)),
+            'backend': PGSQL_DB,
+            'backend_module': psycopg2,
+        }
     else:
         raise RuntimeError("backend %s unknown" % backend)
     newclass = type(name, (_cursor,), methods)
@@ -235,7 +235,3 @@ elif config.backend == PGSQL_DB:
     format_str = "%s"
 else:
     raise RuntimeError("backend %s unknown" % config.backend)
-
-
-
-

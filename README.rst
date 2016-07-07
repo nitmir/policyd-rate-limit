@@ -8,7 +8,7 @@ Policyd rate limit
 .. image:: https://img.shields.io/pypi/l/policyd-rate-limit.svg
     :target: https://www.gnu.org/licenses/gpl-3.0.html
 
-Postfix policyd server allowing to limit the number of mail accepted by
+Postfix policyd server allowing to limit the number of mails accepted by
 postfix over several time periods, by sasl usernames and/or ip addresses.
 
 
@@ -44,7 +44,7 @@ copy an init script to ``/etc/init.d/policyd-rate-limit`` and an unit file to
 After the installation, you may need to run ``sudo systemctl daemon-reload`` for make the unit
 file visible by systemd.
 
-You should ran ``policyd-rate-limit --clean`` on a regular basis to delete old records from the
+You should run ``policyd-rate-limit --clean`` on a regular basis to delete old records from the
 database. It could be wise to put it in a daily cron, for example::
 
     0 0 * * * policyd-rate-limit /usr/local/bin/policyd-rate-limit --clean >/dev/null
