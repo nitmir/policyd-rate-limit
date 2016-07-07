@@ -1,4 +1,5 @@
 include LICENSE
 include README.rst
+include Makefile
 include init/policyd-rate-limit.service
 include init/policyd-rate-limit
