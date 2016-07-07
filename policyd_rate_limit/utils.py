@@ -18,6 +18,7 @@ import time
 import imp
 import pwd
 import grp
+import warnings
 
 from policyd_rate_limit.const import SQLITE_DB, MYSQL_DB, PGSQL_DB
 from policyd_rate_limit import config as default_config
@@ -197,7 +198,12 @@ def database_init():
       id varchar(40) NOT NULL,
       date int(32) NOT NULL
     );"""
-        cur.execute(query)
+        try:
+            # ignore possible warnings about the table already existing
+            warnings.filterwarnings('ignore', category=cursor.backend_module.Warning)
+            cur.execute(query)
+        finally:
+            warnings.resetwarnings()
         try:
             cur.execute('CREATE INDEX mail_count_index ON mail_count(id, date)')
         except cursor.backend_module.Error as error:
