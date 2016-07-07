@@ -39,7 +39,7 @@ class Config(object):
                 break
         # if not config file found, fallback to default config.
         else:
-            sys.stdout.write("No config file found, using default config")
+            sys.stdout.write("No config file found, using default config\n")
             self.config = default_config
 
         self.limited_netword = [netaddr.IPNetwork(net) for net in self.limited_netword]
@@ -199,8 +199,9 @@ def database_init():
       date int(32) NOT NULL
     );"""
         try:
-            # ignore possible warnings about the table already existing
-            warnings.filterwarnings('ignore', category=cursor.backend_module.Warning)
+            if cursor.backend == MYSQL_DB:
+                # ignore possible warnings about the table already existing
+                warnings.filterwarnings('ignore', category=cursor.backend_module.Warning)
             cur.execute(query)
         finally:
             warnings.resetwarnings()
