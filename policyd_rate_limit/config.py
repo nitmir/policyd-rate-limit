@@ -8,7 +8,7 @@
 # Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
 # (c) 2015 Valentin Samir
-from policyd_rate_limit.const import SQLITE_DB, MYSQL_DB, PGSQL_DB
+from policyd_rate_limit.const import SQLITE_DB, MYSQL_DB, PGSQL_DB  # noqa: F401
 
 debug = True
 
