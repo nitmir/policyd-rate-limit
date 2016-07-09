@@ -66,37 +66,43 @@ class Policyd(object):
         connection.close()
 
     def run(self):
-        sock = self.sock
-        sock.bind(config.SOCKET)
-        if isinstance(config.SOCKET, str):
-            os.chmod(config.SOCKET, config.socket_permission)
-        sock.listen(1)
-        self.socket_data_read[sock] = []
-        if config.debug:
-            sys.stderr.write('waiting for connections\n')
-        while True:
-            # wait for a socket to read to or to write to
-            (rlist, wlist, _) = select.select(
-                self.socket_data_read.keys(), self.socket_data_write.keys(), []
-            )
-            for socket in rlist:
-                # if the socket is the main socket, there is a new connection to accept
-                if socket == sock:
-                    connection, client_address = sock.accept()
-                    if config.debug:
-                        sys.stderr.write('connection from %s\n' % client_address)
-                    self.socket_data_read[connection] = []
-                # else there is data to read on a client socket
-                else:
-                    self.read(socket)
-            for socket in wlist:
-                data = self.socket_data_write[socket]
-                sent = socket.send(data)
-                data_not_sent = data[sent:]
-                if data_not_sent:
-                    self.socket_data_write[socket] = data_not_sent
-                else:
-                    self.close_connection(socket)
+        try:
+            sock = self.sock
+            sock.bind(config.SOCKET)
+            if isinstance(config.SOCKET, str):
+                os.chmod(config.SOCKET, config.socket_permission)
+            sock.listen(1)
+            self.socket_data_read[sock] = []
+            if config.debug:
+                sys.stderr.write('waiting for connections\n')
+            while True:
+                # wait for a socket to read to or to write to
+                (rlist, wlist, _) = select.select(
+                    self.socket_data_read.keys(), self.socket_data_write.keys(), []
+                )
+                for socket in rlist:
+                    # if the socket is the main socket, there is a new connection to accept
+                    if socket == sock:
+                        connection, client_address = sock.accept()
+                        if config.debug:
+                            sys.stderr.write('connection from %s\n' % client_address)
+                        self.socket_data_read[connection] = []
+                    # else there is data to read on a client socket
+                    else:
+                        self.read(socket)
+                for socket in wlist:
+                    data = self.socket_data_write[socket]
+                    sent = socket.send(data)
+                    data_not_sent = data[sent:]
+                    if data_not_sent:
+                        self.socket_data_write[socket] = data_not_sent
+                    else:
+                        self.close_connection(socket)
+        except KeyboardInterrupt:
+            for socket in self.socket_data_read.keys():
+                if socket != self.sock:
+                    self.close_connection(sock)
+            raise
 
     def read(self, connection):
         try:
@@ -133,6 +139,9 @@ class Policyd(object):
                 self.action(connection, request)
             else:
                 self.socket_data_read[connection] = buffer
+        except KeyboardInterrupt:
+            self.close_connection(connection)
+            raise
         except Exception:
             self.close_connection(connection)
 
