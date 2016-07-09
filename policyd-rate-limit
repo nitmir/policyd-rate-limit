@@ -92,7 +92,11 @@ if __name__ == "__main__":
                 utils.write_pidfile()
                 try:
                     p = Policyd()
-                    p.socket()
+                    try:
+                        p.socket()
+                    except ValueError as error:
+                        sys.stderr.write("%s\n" % error)
+                        sys.exit(4)
                     try:
                         p.run()
                     except KeyboardInterrupt:
@@ -101,6 +105,6 @@ if __name__ == "__main__":
                         p.close_socket()
                 finally:
                     utils.remove_pidfile()
-            except ValueError as error:
+            except Exception as error:
                 sys.stderr.write("%s\n" % error)
-                sys.exit(4)
+                sys.exit(6)
