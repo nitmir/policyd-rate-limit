@@ -1,0 +1,88 @@
+#!/bin/bash
+### BEGIN INIT INFO
+# Provides:          policyd-rate-limit
+# Required-Start:    $remote_fs $network $syslog
+# Required-Stop:     $remote_fs $network $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Postfix policyd rate limiter
+### END INIT INFO
+
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU General Public License version 3 for
+# more details.
+#
+# You should have received a copy of the GNU General Public License version 3
+# along with this program; if not, write to the Free Software Foundation, Inc., 51
+# Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# (c) 2015 Valentin Samir
+
+DAEMON="/usr/bin/policyd-rate-limit"
+NAME="policyd-rate-limit"
+DESC="Postfix policyd rate limiter"
+PID="$($DAEMON --get-config pidfile)"
+
+[ -x $DAEMON ] || exit 0
+
+. /lib/lsb/init-functions
+
+stoped(){
+  if [ -f $PID ]; then
+    pid=`cat $PID`
+    if [ `ps -p $pid | wc -l` -eq 2 ]; then
+      return 1
+    fi
+  fi
+  return 0
+}
+
+start(){
+ if $(stoped); then
+  log_daemon_msg "Starting $DESC"
+  /sbin/start-stop-daemon --start --pidfile $PID -b --exec $DAEMON
+  log_end_msg $?
+ else
+  log_failure_msg "already running"
+ fi
+}
+
+stop(){
+ if $(stoped); then
+  log_warning_msg "not running"
+ else
+  log_daemon_msg "Stopping $DESC"
+  /sbin/start-stop-daemon --stop --pidfile $PID --retry 30
+  log_end_msg $?
+ fi
+}
+
+status(){
+    status_of_proc -p "$PID" "$NAME" "$DESC"
+}
+
+case $1 in
+  start) start $@
+  ;;
+  stop) stop $@
+  ;;
+  restart)
+    stop $@
+    start $@
+  ;;
+  force-reload)
+    stop $@
+    start $@
+  ;;
+  status)
+    status $@
+  ;;
+  *)
+   echo "Usage: $0 {start|stop|restart|force-reload|status}" >&2
+   exit 1
+  ;;
+esac
+
+exit 0
+

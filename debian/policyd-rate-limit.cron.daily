@@ -1,0 +1,4 @@
+#!/bin/sh
+# cron script for policyd-rate-limit
+test -x /usr/bin/policyd-rate-limit || exit 0
+/usr/bin/policyd-rate-limit --clean >/dev/null

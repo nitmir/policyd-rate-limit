@@ -1,0 +1,5 @@
+policyd-rate-limit (0.4.1-1) unstable; urgency=low
+
+  * Initial release. (Closes: #XXXXXX)
+
+ -- Valentin Samir <valentin.samir@crans.prg>  Sat, 09 Jul 2016 17:16:28 +0200

@@ -1,0 +1,12 @@
+[Unit]
+Description=Postfix policyd rate limiter
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/policyd-rate-limit
+KillSignal=SIGINT
+StandardOutput=syslog
+StandardError=syslog
+
+[Install]
+WantedBy=multi-user.target

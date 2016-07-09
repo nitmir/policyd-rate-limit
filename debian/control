@@ -1,0 +1,31 @@
+Source: policyd-rate-limit
+Section: python
+Priority: optional
+Maintainer: Valentin Samir <valentin.samir@crans.org>
+Uploaders:  Valentin Samir <valentin.samir@crans.org>
+Build-Depends: debhelper (>= 9),
+               dh-python,
+               python3,
+               python3-setuptools,
+               python-docutils
+Standards-Version: 3.9.8.0
+Homepage: https://pypi.python.org/pypi/policyd-rate-limit
+Vcs-Git: https://github.com/nitmir/policyd-rate-limit
+Vcs-Browser: https://github.com/nitmir/policyd-rate-limit
+X-Python3-Version: >= 3.4
+
+Package: policyd-rate-limit
+Architecture: all
+Depends: ${misc:Depends},
+         ${python3:Depends},
+         adduser
+Recommends: python3-mysqldb,
+            python3-psycopg2
+Description: Python3 policy daemon for the postfix MTA
+ policyd-rate-limit is a simple postfix policy daemon written in python3
+ allowing to limit the number of mails a user can send over time.
+ Users are identified either via their sasl usernames or their ip addresses.
+ Limitation rules are a list of couples (number of mails, number of seconds).
+ If a user has sent more than number of mails in number of seconds,
+ a configurable error is returned to the user.
+

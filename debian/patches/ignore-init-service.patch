@@ -1,0 +1,25 @@
+Description: disable setup.py init script and unit file installation
+ policyd-rate-limit (0.4.1-1) unstable; urgency=medium
+ .
+   * Initial release (Closes: #nnnn)
+Author: Valentin Samir <valentin.samir@crans.org>
+
+---
+
+Last-Update: <2016-07-09>
+
+--- policyd-rate-limit-0.4.1.orig/setup.py
++++ policyd-rate-limit-0.4.1/setup.py
+@@ -23,12 +23,6 @@ def add_data_file(dir, file, check_dir=F
+ # if install as root populate /etc
+ if os.getuid() == 0:
+     add_data_file("/etc", 'policyd_rate_limit/policyd-rate-limit.conf')
+-    add_data_file('/etc/init.d', 'init/policyd-rate-limit')
+-    add_data_file(
+-        "/etc/systemd/system",
+-        'init/policyd-rate-limit.service',
+-        check_dir=True
+-    )
+ # else use user .config dir
+ else:
+     conf_dir = os.path.expanduser("~/.config/")
