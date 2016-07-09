@@ -104,6 +104,8 @@ class Policyd(object):
             buffer = self.socket_data_read[connection]
             # read data
             data = connection.recv(1024).decode('UTF-8')
+            if not data:
+                raise ValueError("connection closed")
             if config.debug:
                 sys.stderr.write(data)
             # accumulate it in buffer
