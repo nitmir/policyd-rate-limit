@@ -87,6 +87,7 @@ def make_directories():
 
 
 def drop_privileges():
+    """If current running use is root, drop privileges to user and group set in the config"""
     if os.getuid() != 0:
         # We're not root so, like, whatever dude
         return
@@ -182,6 +183,7 @@ class _cursor(object):
 
 
 def is_ip_limited(ip):
+    """Check if ``ip`` is part of a network of ``config.limited_netword``"""
     ip = netaddr.IPAddress(ip)
     for net in config.limited_netword:
         if ip in net:
@@ -223,6 +225,7 @@ def database_init():
 
 
 def write_pidfile():
+    """write current pid file to ``config.pidfile``"""
     try:
         with open(config.pidfile, 'w') as f:
             f.write("%s" % os.getpid())
@@ -231,6 +234,7 @@ def write_pidfile():
 
 
 def remove_pidfile():
+    """Try to remove ``config.pidfile``"""
     try:
         os.remove(config.pidfile)
     except OSError:
@@ -238,6 +242,10 @@ def remove_pidfile():
 
 
 def get_config(dotted_string):
+    """
+        Return the config parameter designated by ``dotted_string``.
+        Dots are used as separator between dict and key.
+    """
     params = dotted_string.split('.')
     obj = getattr(config, params[0])
     for param in params[1:]:

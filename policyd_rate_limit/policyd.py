@@ -23,10 +23,12 @@ class Pass(Exception):
 
 
 class Policyd(object):
+    """The policy server class"""
     socket_data_read = {}
     socket_data_write = {}
 
     def socket(self):
+        """initialize the socket from the config parameters"""
         # if socket is a string assume it is the path to an unix socket
         if isinstance(config.SOCKET, str):
             try:
@@ -45,6 +47,7 @@ class Policyd(object):
         self.sock = sock
 
     def close_socket(self):
+        """close the socket depending of the config parameters"""
         self.sock.close()
         # if socket was an unix socket, delete it after closing.
         if isinstance(config.SOCKET, str):
@@ -54,6 +57,7 @@ class Policyd(object):
                 sys.stderr.write("%s\n" % error)
 
     def close_connection(self, connection):
+        """close a connection and clean read/write dict"""
         # Clean up the connection
         try:
             del self.socket_data_read[connection]
@@ -66,6 +70,7 @@ class Policyd(object):
         connection.close()
 
     def run(self):
+        """The main server loop"""
         try:
             sock = self.sock
             sock.bind(config.SOCKET)
@@ -109,6 +114,7 @@ class Policyd(object):
             raise
 
     def read(self, connection):
+        """Called then a connection is ready for reads"""
         try:
             # get the current buffer of the connection
             buffer = self.socket_data_read[connection]
@@ -125,7 +131,7 @@ class Policyd(object):
             if len(data) < 2:
                 data = u"".join(buffer)
                 buffer = [data]
-            # We reach on empty line so posfix has finish to send and wait for a response
+            # We reach on empty line so the client has finish to send and wait for a response
             if data[-2:] == "\n\n":
                 data = u"".join(buffer)
                 request = {}
@@ -150,6 +156,7 @@ class Policyd(object):
             self.close_connection(connection)
 
     def action(self, connection, request):
+        """Called then the client has sent an empty line"""
         id = None
         # By default, we do not block emails
         action = config.success_action
@@ -165,7 +172,7 @@ class Policyd(object):
                     utils.is_ip_limited(request[u'client_address'])
                 ):
                     id = request[u'client_address']
-                # if postfix neither send us client ip adresse nor sasl username, jump
+                # if the client neither send us client ip adresse nor sasl username, jump
                 # to the next section
                 else:
                     raise Pass()
@@ -197,5 +204,5 @@ class Policyd(object):
         data = u"action=%s\n\n" % action
         if config.debug:
             sys.stderr.write(data)
-        # return the result to postfix
+        # return the result to the client
         self.socket_data_write[connection] = data.encode('UTF-8')
