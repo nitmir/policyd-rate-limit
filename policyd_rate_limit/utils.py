@@ -237,6 +237,14 @@ def remove_pidfile():
         pass
 
 
+def get_config(dotted_string):
+    params = dotted_string.split('.')
+    obj = getattr(config, params[0])
+    for param in params[1:]:
+        obj = obj[param]
+    return obj
+
+
 # initialize config
 config = Config()
 
