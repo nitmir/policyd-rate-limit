@@ -12,6 +12,7 @@ import os
 import sys
 import socket
 import time
+import select
 
 from policyd_rate_limit import utils
 from policyd_rate_limit.utils import cursor, config
@@ -22,6 +23,8 @@ class Pass(Exception):
 
 
 class Policyd(object):
+    socket_data_read = {}
+    socket_data_write = {}
 
     def socket(self):
         # if socket is a string assume it is the path to an unix socket
@@ -50,53 +53,86 @@ class Policyd(object):
             except OSError as error:
                 sys.stderr.write("%s\n" % error)
 
+    def close_connection(self, connection):
+        # Clean up the connection
+        try:
+            del self.socket_data_read[connection]
+        except KeyError:
+            pass
+        try:
+            del self.socket_data_write[connection]
+        except KeyError:
+            pass
+        connection.close()
+
     def run(self):
         sock = self.sock
         sock.bind(config.SOCKET)
         if isinstance(config.SOCKET, str):
             os.chmod(config.SOCKET, config.socket_permission)
         sock.listen(1)
+        self.socket_data_read[sock] = []
+        if config.debug:
+            sys.stderr.write('waiting for connections\n')
         while True:
-            if config.debug:
-                sys.stderr.write('waiting for a connection\n')
-            connection, client_address = sock.accept()
-            try:
-                if config.debug:
-                    sys.stderr.write('connection from %s\n' % client_address)
-                buffer = []
-                # read from socket until we reach a blank line
-                while True:
-                    # read data
-                    data = connection.recv(1024).decode('UTF-8')
+            # wait for a socket to read to or to write to
+            (rlist, wlist, _) = select.select(
+                self.socket_data_read.keys(), self.socket_data_write.keys(), []
+            )
+            for socket in rlist:
+                # if the socket is the main socket, there is a new connection to accept
+                if socket == sock:
+                    connection, client_address = sock.accept()
                     if config.debug:
-                        sys.stderr.write(data)
-                    # accumulate it in buffer
-                    buffer.append(data)
-                    # if data len too short to determine if we are on an empty line, we
-                    # concatene datas in buffer
-                    if len(data) < 2:
-                        data = u"".join(buffer)
-                        buffer = [data]
-                    # We reach on empty line so posfix has finish to send and wait for a response
-                    if data[-2:] == "\n\n":
-                        data = u"".join(buffer)
-                        request = {}
-                        # read data are like one key=value per line
-                        for line in data.split("\n"):
-                            line = line.strip()
-                            try:
-                                key, value = line.split(u"=", 1)
-                                if value:
-                                    request[key] = value
-                            # if value is empty, ignore it
-                            except ValueError:
-                                pass
-                        # process the collected data in the action method
-                        self.action(connection, request)
-                        break
-            finally:
-                # Clean up the connection
-                connection.close()
+                        sys.stderr.write('connection from %s\n' % client_address)
+                    self.socket_data_read[connection] = []
+                # else there is data to read on a client socket
+                else:
+                    self.read(socket)
+            for socket in wlist:
+                data = self.socket_data_write[socket]
+                sent = socket.send(data)
+                data_not_sent = data[sent:]
+                if data_not_sent:
+                    self.socket_data_write[socket] = data_not_sent
+                else:
+                    self.close_connection(socket)
+
+    def read(self, connection):
+        try:
+            # get the current buffer of the connection
+            buffer = self.socket_data_read[connection]
+            # read data
+            data = connection.recv(1024).decode('UTF-8')
+            if config.debug:
+                sys.stderr.write(data)
+            # accumulate it in buffer
+            buffer.append(data)
+            # if data len too short to determine if we are on an empty line, we
+            # concatene datas in buffer
+            if len(data) < 2:
+                data = u"".join(buffer)
+                buffer = [data]
+            # We reach on empty line so posfix has finish to send and wait for a response
+            if data[-2:] == "\n\n":
+                data = u"".join(buffer)
+                request = {}
+                # read data are like one key=value per line
+                for line in data.split("\n"):
+                    line = line.strip()
+                    try:
+                        key, value = line.split(u"=", 1)
+                        if value:
+                            request[key] = value
+                    # if value is empty, ignore it
+                    except ValueError:
+                        pass
+                # process the collected data in the action method
+                self.action(connection, request)
+            else:
+                self.socket_data_read[connection] = buffer
+        except Exception:
+            self.close_connection(connection)
 
     def action(self, connection, request):
         id = None
@@ -147,4 +183,4 @@ class Policyd(object):
         if config.debug:
             sys.stderr.write(data)
         # return the result to postfix
-        connection.sendall(data.encode('UTF-8'))
+        self.socket_data_write[connection] = data.encode('UTF-8')
