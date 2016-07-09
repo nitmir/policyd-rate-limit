@@ -19,6 +19,24 @@ from policyd_rate_limit.utils import config
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--clean", help="clean old records from the database", action="store_true")
+    parser.add_argument(
+        "--get-config",
+        help="return the value of a config parameter",
+        metavar='PARAMETER_NAME'
+    )
+    parser.add_argument("--file", '-f', help="path to a config file", metavar='CONFIG_PATH')
+    args = parser.parse_args()
+    try:
+        if args.file:
+            config.setup(args.file)
+        else:
+            config.setup()
+    except ValueError as error:
+        sys.stderr.write("%s\n" % error)
+        sys.exit(5)
+
     # if policyd-rate-limit was lauch by root, try creating piddir, socket dir and if used
     # sqlite3 database dir then, drop privileges
     if os.getuid() == 0:
@@ -29,10 +47,6 @@ if __name__ == "__main__":
         except ValueError as error:
             sys.stderr.write("%s\n" % error)
             sys.exit(2)
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--clean", help="clean old records from the database", action="store_true")
-    parser.add_argument("--get-config", help="return the value of a config parameter")
-    args = parser.parse_args()
     # ask for the value of a config param, print it and exit
     if args.get_config:
         try:

@@ -15,7 +15,7 @@ import time
 import select
 
 from policyd_rate_limit import utils
-from policyd_rate_limit.utils import cursor, config
+from policyd_rate_limit.utils import config
 
 
 class Pass(Exception):
@@ -160,7 +160,7 @@ class Policyd(object):
         id = None
         # By default, we do not block emails
         action = config.success_action
-        with cursor() as cur:
+        with utils.cursor() as cur:
             try:
                 # if user is authenticated, we filter by sasl username
                 if config.limit_by_sasl and u'sasl_username' in request:
@@ -184,7 +184,7 @@ class Policyd(object):
                         (
                             "SELECT COUNT(*) FROM mail_count "
                             "WHERE id = %s AND date >= %s"
-                        ) % ((utils.format_str,)*2),
+                        ) % ((config.format_str,)*2),
                         (id, int(time.time() - delta))
                     ):
                         nb = cur.fetchone()[0]
@@ -198,7 +198,7 @@ class Policyd(object):
                 if config.debug:
                     sys.stderr.write(u"insert id %s\n" % id)
                 cur.execute(
-                    "INSERT INTO mail_count VALUES (%s, %s)" % ((utils.format_str,)*2),
+                    "INSERT INTO mail_count VALUES (%s, %s)" % ((config.format_str,)*2),
                     (id, int(time.time()))
                 )
         data = u"action=%s\n\n" % action

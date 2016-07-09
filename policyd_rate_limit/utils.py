@@ -10,7 +10,6 @@
 # (c) 2015-2016 Valentin Samir
 # -*- mode: python; coding: utf-8 -*-
 import os
-import sys
 import threading
 import collections
 import netaddr
@@ -26,30 +25,62 @@ from policyd_rate_limit import config as default_config
 
 class Config(object):
     """Act as a config module, missing parameters fallbacks to default_config"""
-    def __init__(self):
-        # search for config files in the following locations
-        config_files = [
-            os.path.expanduser("~/.config/policyd-rate-limit.conf"),
-            "/etc/policyd-rate-limit.conf",
-        ]
+    def __init__(self, config_file=None):
+        if config_file is None:
+            # search for config files in the following locations
+            config_files = [
+                os.path.expanduser("~/.config/policyd-rate-limit.conf"),
+                "/etc/policyd-rate-limit.conf",
+            ]
+        else:
+            config_files = [config_file]
         for config_file in config_files:
             if os.path.isfile(config_file):
                 # sys.stdout.write('Using config file "%s"\n' % config_file)
-                self.config = imp.load_source('config', config_file)
+                self._config = imp.load_source('config', config_file)
                 break
-        # if not config file found, fallback to default config.
+        # if not config file found, raise en error
         else:
-            sys.stdout.write("No config file found, using default config\n")
-            self.config = default_config
+            raise ValueError("No config file found, searched for %s" % ", ".join(config_files))
 
         self.limited_netword = [netaddr.IPNetwork(net) for net in self.limited_netword]
 
     def __getattr__(self, name):
         try:
-            return getattr(self.config, name)
+            return getattr(self._config, name)
         # If an parameter is not defined in the config file, return its default value.
         except AttributeError:
             return getattr(default_config, name)
+
+
+class LazyConfig(object):
+    """A lazy proxy to the Config class allowing to import config before it is initialized"""
+    _config = None
+    format_str = None
+
+    def __getattr__(self, name):
+        if self._config is None:
+            raise RuntimeError("config is not initialized")
+        return getattr(self._config, name)
+
+    def setup(self, config_file=None):
+        """initialize the config"""
+        global cursor
+        # initialize config
+        self._config = Config(config_file)
+
+        # make the cursor class function of the configured backend
+        if config.backend == SQLITE_DB:
+            cursor = make_cursor("sqlite_cursor", config.backend, config.sqlite_config)
+            self.format_str = "?"
+        elif config.backend == MYSQL_DB:
+            cursor = make_cursor("mysql_cursor", config.backend, config.mysql_config)
+            self.format_str = "%s"
+        elif config.backend == PGSQL_DB:
+            cursor = make_cursor("pgsql_cursor", config.backend, config.pgsql_config)
+            self.format_str = "%s"
+        else:
+            raise RuntimeError("backend %s unknown" % config.backend)
 
 
 def make_directories():
@@ -199,7 +230,7 @@ def clean():
     # remove old record older than 2*max_delta
     expired = int(time.time() - max_delta - max_delta)
     with cursor() as cur:
-        cur.execute("DELETE FROM mail_count WHERE date <= %s" % format_str, (expired,))
+        cur.execute("DELETE FROM mail_count WHERE date <= %s" % config.format_str, (expired,))
         print("%d records deleted" % cur.rowcount)
 
 
@@ -253,18 +284,4 @@ def get_config(dotted_string):
     return obj
 
 
-# initialize config
-config = Config()
-
-# make the cursor class function of the configured backend
-if config.backend == SQLITE_DB:
-    cursor = make_cursor("sqlite_cursor", config.backend, config.sqlite_config)
-    format_str = "?"
-elif config.backend == MYSQL_DB:
-    cursor = make_cursor("mysql_cursor", config.backend, config.mysql_config)
-    format_str = "%s"
-elif config.backend == PGSQL_DB:
-    cursor = make_cursor("pgsql_cursor", config.backend, config.pgsql_config)
-    format_str = "%s"
-else:
-    raise RuntimeError("backend %s unknown" % config.backend)
+config = LazyConfig()
