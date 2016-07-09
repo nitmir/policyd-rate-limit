@@ -91,13 +91,17 @@ class Policyd(object):
                     else:
                         self.read(socket)
                 for socket in wlist:
-                    data = self.socket_data_write[socket]
-                    sent = socket.send(data)
-                    data_not_sent = data[sent:]
-                    if data_not_sent:
-                        self.socket_data_write[socket] = data_not_sent
-                    else:
-                        self.close_connection(socket)
+                    try:
+                        data = self.socket_data_write[socket]
+                        sent = socket.send(data)
+                        data_not_sent = data[sent:]
+                        if data_not_sent:
+                            self.socket_data_write[socket] = data_not_sent
+                        else:
+                            self.close_connection(socket)
+                    # the socket has been closed during read
+                    except KeyError:
+                        pass
         except KeyboardInterrupt:
             for socket in self.socket_data_read.keys():
                 if socket != self.sock:
