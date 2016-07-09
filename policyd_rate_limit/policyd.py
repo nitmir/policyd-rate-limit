@@ -131,7 +131,7 @@ class Policyd(object):
                     ):
                         nb = cur.fetchone()[0]
                         if nb >= mail_nb:
-                            action = u"%s Rate limit reach, retry later" % config.fail_action
+                            action = config.fail_action
                             raise Pass()
             except Pass:
                 pass

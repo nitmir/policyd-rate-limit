@@ -84,7 +84,8 @@ If not found, then in ``/etc/policyd-rate-limit.conf``, and if not found use the
 * ``success_action``: If not limits are reach, which action postfix should do. The default is
   ``"dunno"``. See http://www.postfix.org/access.5.html for possible actions.
 * ``fail_action``: If a limit is reach, which action postfix should do. The default is
-  ``"defer_if_permit"``. See http://www.postfix.org/access.5.html for possible actions.
+  ``"defer_if_permit Rate limit reach, retry later"``.
+  See http://www.postfix.org/access.5.html for possible actions.
 
 
 
