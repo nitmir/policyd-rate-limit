@@ -75,16 +75,15 @@ def make_directories():
         if not os.listdir(socket_dir):
             os.chown(socket_dir, uid, gid)
     if config.backend == SQLITE_DB:
-       try:
-           db_dir = os.path.dirname(config.sqlite_config["database"])
-           if not os.path.exists(db_dir):
-               os.mkdir(db_dir)
-           if not os.listdir(db_dir):
-               os.chmod(db_dir, 0o700)
-               os.chown(db_dir, uid, gid)
-       except KeyError:
-           pass
-
+        try:
+            db_dir = os.path.dirname(config.sqlite_config["database"])
+            if not os.path.exists(db_dir):
+                os.mkdir(db_dir)
+            if not os.listdir(db_dir):
+                os.chmod(db_dir, 0o700)
+                os.chown(db_dir, uid, gid)
+        except KeyError:
+            pass
 
 
 def drop_privileges():
