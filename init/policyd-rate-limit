@@ -22,7 +22,7 @@
 DAEMON="/usr/local/bin/policyd-rate-limit"
 NAME="policyd-rate-limit"
 DESC="Postfix policyd rate limiter"
-PID="$($DAEMON --get_config pidfile)"
+PID="$($DAEMON --get-config pidfile)"
 
 [ -x $DAEMON ] || exit 0
 

@@ -19,8 +19,8 @@ from policyd_rate_limit.utils import config
 
 
 if __name__ == "__main__":
-    # if policyd-rate-limit was lauch by root, try creating piddir and socket dir then,
-    # drop privileges
+    # if policyd-rate-limit was lauch by root, try creating piddir, socket dir and if used
+    # sqlite3 database dir then, drop privileges
     if os.getuid() == 0:
         try:
             utils.make_directories()
@@ -31,13 +31,17 @@ if __name__ == "__main__":
             sys.exit(2)
     parser = argparse.ArgumentParser()
     parser.add_argument("--clean", help="clean old records from the database", action="store_true")
-    parser.add_argument("--get_config", help="return the value of a config parameter")
+    parser.add_argument("--get-config", help="return the value of a config parameter")
     args = parser.parse_args()
     # ask for the value of a config param, print it and exit
     if args.get_config:
         try:
-            sys.stdout.write(getattr(config, args.get_config))
-        except AttributeError:
+            get_config = args.get_config.split('.')
+            obj = getattr(config, get_config[0])
+            for part in get_config[1:]:
+                obj = obj[part]
+            sys.stdout.write(str(obj))
+        except (AttributeError):
             sys.stderr.write("%s not found\n" % args.get_config)
             sys.exit(1)
     # else we gonna need the database so we initialize it
