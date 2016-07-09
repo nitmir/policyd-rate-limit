@@ -55,7 +55,7 @@ Settings
 ``policyd-rate-limit`` search for its config first in ``~/.config/policyd-rate-limit.conf``
 If not found, then in ``/etc/policyd-rate-limit.conf``, and if not found use the default config.
 
-* ``debug``: make ``policyd-rate-limit`` output to stderr all of its exanges with postfix.
+* ``debug``: make ``policyd-rate-limit`` output logs to stderr.
   The default is True.
 * ``user``: The user ``policyd-rate-limit`` will use to drop privileges.
   The default is ``"policyd-rate-limit"``.
@@ -95,6 +95,6 @@ Postfix settings
 /etc/postfix/main.cf::
 
     smtpd_recipient_restrictions =
-        ...
-        check_policy_service unix:ratelimit/policy
+        ...,
+        check_policy_service {unix:ratelimit/policy, default_action=DUNNO},
         ...

@@ -25,5 +25,10 @@ clean_build:
 clean: clean_pyc clean_build
 	find ./ -name '*~' -delete
 
+man_files:
+	mkdir -p build/man/
+	rst2man  docs/policyd-rate-limit.8.rst | sed 's/)(/(/g' > build/man/policyd-rate-limit.8
+	rst2man  docs/policyd-rate-limit.conf.5.rst | sed 's/)(/(/g' > build/man/policyd-rate-limit.conf.5
+
 dist:
 	python3 setup.py sdist

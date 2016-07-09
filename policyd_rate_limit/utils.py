@@ -36,7 +36,6 @@ class Config(object):
             config_files = [config_file]
         for config_file in config_files:
             if os.path.isfile(config_file):
-                # sys.stdout.write('Using config file "%s"\n' % config_file)
                 self._config = imp.load_source('config', config_file)
                 break
         # if not config file found, raise en error
