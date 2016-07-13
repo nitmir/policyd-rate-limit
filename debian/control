@@ -19,7 +19,7 @@ Architecture: all
 Depends: ${misc:Depends},
          ${python3:Depends},
          adduser
-Recommends: python3-mysqldb,
+Suggests: python3-mysqldb,
             python3-psycopg2
 Description: Python3 policy daemon for the postfix MTA
  policyd-rate-limit is a simple postfix policy daemon written in python3
