@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 ### BEGIN INIT INFO
 # Provides:          policyd-rate-limit
 # Required-Start:    $remote_fs $network $syslog
@@ -31,7 +31,7 @@ PID="$($DAEMON --get-config pidfile)"
 stoped(){
   if [ -f $PID ]; then
     pid=`cat $PID`
-    if [ `ps -p $pid | wc -l` -eq 2 ]; then
+    if ps -p $pid >/dev/null; then
       return 1
     fi
   fi
@@ -39,44 +39,42 @@ stoped(){
 }
 
 start(){
- if $(stoped); then
-  log_daemon_msg "Starting $DESC"
+ if stoped; then
+  log_daemon_msg "Starting $DESC" "$NAME"
   /sbin/start-stop-daemon --start --pidfile $PID -b --exec $DAEMON
   log_end_msg $?
  else
-  log_failure_msg "already running"
+  log_action_msg "Already running: $NAME"
  fi
 }
 
 stop(){
- if $(stoped); then
-  log_warning_msg "not running"
+ if stoped; then
+  log_action_msg "Not running: $NAME"
  else
-  log_daemon_msg "Stopping $DESC"
+  log_daemon_msg "Stopping $DESC" "$NAME"
   /sbin/start-stop-daemon --stop --pidfile $PID --retry 30
   log_end_msg $?
  fi
 }
 
 status(){
-    status_of_proc -p "$PID" "$NAME" "$DESC"
+    status_of_proc -p "$PID" "$DAEMON" "$NAME"
 }
 
 case $1 in
-  start) start $@
+  start) start
   ;;
-  stop) stop $@
+  stop) stop
   ;;
   restart)
-    stop $@
-    start $@
+    stop && start
   ;;
   force-reload)
-    stop $@
-    start $@
+    stop && start
   ;;
   status)
-    status $@
+    status
   ;;
   *)
    echo "Usage: $0 {start|stop|restart|force-reload|status}" >&2
@@ -84,5 +82,4 @@ case $1 in
   ;;
 esac
 
-exit 0
-
+exit $?
