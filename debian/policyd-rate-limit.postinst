@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # postinst script
 #
 # see: dh_installdeb(1)
@@ -9,31 +9,40 @@ set -e
 #       * <postinst> `configure' <most-recently-configured-version>
 #       * <old-postinst> `abort-upgrade' <new version>
 #       * <conflictor's-postinst> `abort-remove' `in-favour' <package>
-#	 <new-version>
+#         <new-version>
 #       * <deconfigured's-postinst> `abort-deconfigure' `in-favour'
-#	 <failed-install-package> <version> `removing'
-#	 <conflicting-package> <version>
+#         <failed-install-package> <version> `removing'
+#         <conflicting-package> <version>
 #
 # for details, see http://www.debian.org/doc/debian-policy/ or
 # the debian-policy package
 #
 
 case "$1" in
-	configure)
-		adduser --system --group --home /var/run/policyd-rate-limit \
-			--no-create-home --quiet policyd-rate-limit
-		chown root:policyd-rate-limit /etc/policyd-rate-limit.conf
-		chmod 640 /etc/policyd-rate-limit.conf
-	;;
+    configure)
+        # if using default user and group, continue, else let the sysadmin deal with it
+        if [ "$(policyd-rate-limit --get-config user)" = "policyd-rate-limit" ] &&
+            [ "$(policyd-rate-limit --get-config group)" = "policyd-rate-limit" ];
+        then
+            # if the default user/group do not exists, create it and set config ownership
+            # if it already exists (e.g. package upgrade) do nothing
+            if ! id -u policyd-rate-limit >/dev/null 2>&1); then
+                adduser --system --group --home /run/policyd-rate-limit \
+                    --no-create-home --quiet policyd-rate-limit
+                chown root:policyd-rate-limit /etc/policyd-rate-limit.conf
+                chmod 640 /etc/policyd-rate-limit.conf
+            fi
+        fi
+    ;;
 
-	abort-remove|abort-deconfigure|abort-upgrade)
+    abort-remove|abort-deconfigure|abort-upgrade)
 
-	;;
+    ;;
 
-	*)
-		echo "postinst called with unknown argument \`$1'" >&2
-		exit 1
-	;;
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+    ;;
 esac
 
 #DEBHELPER#
