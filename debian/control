@@ -21,6 +21,7 @@ Depends: ${misc:Depends},
          adduser
 Suggests: python3-mysqldb,
             python3-psycopg2
+Enhances: postfix
 Description: postfix policy daemon limiting the number of mails a user can send
  policyd-rate-limit is a simple postfix policy daemon written in python3
  allowing to limit the number of mails a user can send over time.
