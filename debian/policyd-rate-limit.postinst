@@ -26,7 +26,7 @@ case "$1" in
         then
             # if the default user/group do not exists, create it and set config ownership
             # if it already exists (e.g. package upgrade) do nothing
-            if ! id -u policyd-rate-limit >/dev/null 2>&1); then
+            if ! id -u policyd-rate-limit >/dev/null 2>&1; then
                 adduser --system --group --home /run/policyd-rate-limit \
                     --no-create-home --quiet policyd-rate-limit
                 chown root:policyd-rate-limit /etc/policyd-rate-limit.conf
