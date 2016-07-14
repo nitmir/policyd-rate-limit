@@ -56,10 +56,11 @@ Options
   **--get-config** *configname*
     return the value of the *configname* configuration parameter. You can get a value in a dictionary
     by using a dotted notation. For instance, for getting the key KEY in the dictionary DICT,
-    you should use DICT.KEY for *configname*.
+    you should use DICT.KEY for *configname*. You can call the configuration parameter *config_file*
+    to known which configuration file is used.
 
   **-f**, **--file**
-    path to a policyd-rate-limit config file
+    path to a policyd-rate-limit configuration file
 
 
 Logging

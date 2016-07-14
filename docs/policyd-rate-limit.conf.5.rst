@@ -76,6 +76,9 @@ Settings
   If a limit is reach, which action postfix should do.
   The default is "defer_if_permit Rate limit reach, retry later".
   See **access**)(5) for possible actions.
+**config_file**
+  This parameter is automatically set to the path of the configuration file currently in use.
+  You can call it in conjunction with **--get-config** to known which configuration file is used.
 
 See also
 ========
