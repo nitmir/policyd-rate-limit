@@ -80,6 +80,32 @@ Settings
   This parameter is automatically set to the path of the configuration file currently in use.
   You can call it in conjunction with **--get-config** to known which configuration file is used.
 
+
+**report**
+  if True, send a report to **report_to** about users reaching limits each time
+  --clean is called. The default is False.
+**report_from**
+  From who to send emails reports. It must be defined when **report** is True.
+**report_to**
+  Address to send emails reports to. It must be defined when **report** is True.
+**report_subject**
+  Subject of the report email. The default is "policyd-rate-limit report".
+**report_limits**
+  List of number of seconds from the limits list for which you want to be reported.
+  The default is [86400].
+
+
+**smtp_server**
+  The smtp server to use to send emails ("host", port).
+  The default is ("localhost", 25).
+**smtp_starttls**
+  Should we use starttls to send mails ? (you should set this to True if
+  you use **smtp_credentials**). The default is False.
+**smtp_credentials**
+  Should we use credentials to connect to smtp_server ?
+  if yes set ("user", "password"), else None. The default is None.
+
+
 See also
 ========
 

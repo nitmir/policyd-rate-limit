@@ -97,6 +97,8 @@ Exit values
 
   **7**   Fail to initialize database
 
+  **8**   Error during cleaning
+
 See also
 ========
 

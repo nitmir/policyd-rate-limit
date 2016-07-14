@@ -63,7 +63,11 @@ if __name__ == "__main__":
             sys.exit(7)
         # if database cleaning requested, remove old records and exit
         if args.clean:
-            utils.clean()
+            try:
+                utils.clean()
+            except ValueError as error:
+                sys.stderr.write("%s\n" % error)
+                sys.exit(8)
         # else we gonna lauch the policyd daemon
         else:
             # we check if policyd-rate-limit is not already running by lookig at config.pidfile

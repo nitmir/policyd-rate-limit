@@ -56,3 +56,22 @@ limited_netword = [
 # actions return to postfix, see http://www.postfix.org/access.5.html for a list of actions.
 success_action = "dunno"
 fail_action = "defer_if_permit Rate limit reach, retry later"
+
+
+# if True, send a report to report_email about users reaching limits each time --clean is called
+report = False
+# from who to send emails reports
+report_from = None
+# address to send emails reports to
+report_to = None
+# subject of the report email
+report_subject = "policyd-rate-limit report"
+# add number of seconds from the limits list for which you want to be reported
+report_limits = [86400]
+
+# The smtp server to use to send emails (host, port)
+smtp_server = ("localhost", 25)
+# Should we use starttls (you should set this to True if you use smtp_credentials)
+smtp_starttls = False
+# Should we use credentials to connect to smtp_server ? if yes set ("user", "password"), else None
+smtp_credentials = None

@@ -152,7 +152,8 @@ class Policyd(object):
         except KeyboardInterrupt:
             self.close_connection(connection)
             raise
-        except Exception:
+        except Exception as error:
+            sys.stderr.write("%s\n" % error)
             self.close_connection(connection)
 
     def action(self, connection, request):
@@ -190,6 +191,8 @@ class Policyd(object):
                         nb = cur.fetchone()[0]
                         if nb >= mail_nb:
                             action = config.fail_action
+                            if config.report and delta in config.report_limits:
+                                utils.hit(cur, delta, id)
                             raise Pass()
             except Pass:
                 pass
