@@ -36,11 +36,19 @@ class Config(object):
             config_files = [config_file]
         for config_file in config_files:
             if os.path.isfile(config_file):
-                self._config = imp.load_source('config', config_file)
-                break
+                try:
+                    self._config = imp.load_source('config', config_file)
+                    self.config_file = config_file
+                    break
+                except PermissionError:
+                    pass
         # if not config file found, raise en error
         else:
-            raise ValueError("No config file found, searched for %s" % ", ".join(config_files))
+            raise ValueError(
+                "No config file found or bad permissions, searched for %s" % (
+                    ", ".join(config_files),
+                )
+            )
 
         self.limited_netword = [netaddr.IPNetwork(net) for net in self.limited_netword]
 
