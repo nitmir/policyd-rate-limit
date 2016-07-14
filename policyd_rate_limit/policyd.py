@@ -55,6 +55,7 @@ class Policyd(object):
                 os.remove(config.SOCKET)
             except OSError as error:
                 sys.stderr.write("%s\n" % error)
+                sys.stderr.flush()
 
     def close_connection(self, connection):
         """close a connection and clean read/write dict"""
@@ -80,6 +81,7 @@ class Policyd(object):
             self.socket_data_read[sock] = []
             if config.debug:
                 sys.stderr.write('waiting for connections\n')
+                sys.stderr.flush()
             while True:
                 # wait for a socket to read to or to write to
                 (rlist, wlist, _) = select.select(
@@ -91,6 +93,7 @@ class Policyd(object):
                         connection, client_address = sock.accept()
                         if config.debug:
                             sys.stderr.write('connection from %s\n' % client_address)
+                            sys.stderr.flush()
                         self.socket_data_read[connection] = []
                     # else there is data to read on a client socket
                     else:
@@ -124,6 +127,7 @@ class Policyd(object):
                 raise ValueError("connection closed")
             if config.debug:
                 sys.stderr.write(data)
+                sys.stderr.flush()
             # accumulate it in buffer
             buffer.append(data)
             # if data len too short to determine if we are on an empty line, we
@@ -154,6 +158,7 @@ class Policyd(object):
             raise
         except Exception as error:
             sys.stderr.write("%s\n" % error)
+            sys.stderr.flush()
             self.close_connection(connection)
 
     def action(self, connection, request):
@@ -200,6 +205,7 @@ class Policyd(object):
             if action == config.success_action and id is not None:
                 if config.debug:
                     sys.stderr.write(u"insert id %s\n" % id)
+                    sys.stderr.flush()
                 cur.execute(
                     "INSERT INTO mail_count VALUES (%s, %s)" % ((config.format_str,)*2),
                     (id, int(time.time()))
@@ -207,5 +213,6 @@ class Policyd(object):
         data = u"action=%s\n\n" % action
         if config.debug:
             sys.stderr.write(data)
+            sys.stderr.flush()
         # return the result to the client
         self.socket_data_write[connection] = data.encode('UTF-8')
