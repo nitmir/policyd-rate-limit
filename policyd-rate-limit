@@ -56,7 +56,11 @@ if __name__ == "__main__":
             sys.exit(1)
     # else we gonna need the database so we initialize it
     else:
-        utils.database_init()
+        try:
+            utils.database_init()
+        except Exception as error:
+            sys.stderr.write("Fail to initialize database: %s\n" % error)
+            sys.exit(7)
         # if database cleaning requested, remove old records and exit
         if args.clean:
             utils.clean()

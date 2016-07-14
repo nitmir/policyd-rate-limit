@@ -94,6 +94,7 @@ Exit values
 
   **6**   Some error was raised during runtime
 
+  **7**   Fail to initialize database
 
 See also
 ========
