@@ -264,8 +264,9 @@ def send_report(cur):
     # dist to groups deltas by ids
     report_d = collections.defaultdict(list)
     max_d = {'id': 2, 'delta': 5, 'hit': 3}
-    for (id, delta, hit) in cur.execute("SELECT id, delta, hit FROM limit_report"):
-        report.append((id, delta, hit))
+    cur.execute("SELECT id, delta, hit FROM limit_report")
+    report = list(cur.fetchall())
+    for (id, delta, hit) in report:
         report_d[id].append((delta, hit))
         max_d['id'] = max(max_d['id'], len(id))
         max_d['delta'] = max(max_d['delta'], len(str(delta)))
