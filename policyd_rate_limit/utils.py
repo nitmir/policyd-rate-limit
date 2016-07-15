@@ -151,7 +151,12 @@ def drop_privileges():
 def make_cursor(name, backend, config):
     """Create a cursor class usable as a context manager, binding to the backend selected"""
     if backend == MYSQL_DB:
-        import MySQLdb
+        try:
+            import MySQLdb
+        except ImportError:
+            raise ValueError(
+                "You need to install the python3 module MySQLdb to use the mysql backend"
+            )
         methods = {
             '_db': collections.defaultdict(lambda: MySQLdb.connect(**config)),
             'backend': MYSQL_DB,
@@ -165,7 +170,12 @@ def make_cursor(name, backend, config):
             'backend_module': sqlite3,
         }
     elif backend == PGSQL_DB:
-        import psycopg2
+        try:
+            import psycopg2
+        except ImportError:
+            raise ValueError(
+                "You need to install the python3 module psycopg2 to use the postgresql backend"
+            )
         methods = {
             '_db': collections.defaultdict(lambda: psycopg2.connect(**config)),
             'backend': PGSQL_DB,
