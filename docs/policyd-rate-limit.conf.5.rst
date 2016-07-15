@@ -93,6 +93,8 @@ Settings
 **report_limits**
   List of number of seconds from the limits list for which you want to be reported.
   The default is [86400].
+**report_only_if_needed**
+  Only send a report if some users have reach a reported limit. The default is True.
 
 
 **smtp_server**

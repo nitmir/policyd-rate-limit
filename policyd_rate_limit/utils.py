@@ -258,85 +258,89 @@ def clean():
 
 
 def send_report(cur):
-    text = ["""Below is the table of users who hit a limit since the last cleanup:\n\n"""]
-    # list to sort ids by hits
-    report = []
-    # dist to groups deltas by ids
-    report_d = collections.defaultdict(list)
-    max_d = {'id': 2, 'delta': 5, 'hit': 3}
     cur.execute("SELECT id, delta, hit FROM limit_report")
+    # list to sort ids by hits
     report = list(cur.fetchall())
-    for (id, delta, hit) in report:
-        report_d[id].append((delta, hit))
-        max_d['id'] = max(max_d['id'], len(id))
-        max_d['delta'] = max(max_d['delta'], len(str(delta)))
-        max_d['hit'] = max(max_d['hit'], len(str(hit)))
-    # sort by hits
-    report.sort(key=lambda x: x[2])
-    # table header
-    text.append(
-        "|%s|%s|%s|\n" % (
-            print_fw("id", max_d['id']),
-            print_fw("delta", max_d['delta']),
-            print_fw("hit", max_d['hit'])
-        )
-    )
-    # table header/data separation
-    text.append(
-        "|%s+%s+%s|\n" % (
-            print_fw("", max_d['id'], filler='-'),
-            print_fw("", max_d['delta'], filler='-'),
-            print_fw("", max_d['hit'], filler='-')
-        )
-    )
-
-    for (id, _, _) in report:
-        # sort by delta
-        report_d[id].sort()
-        for (delta, hit) in report_d[id]:
-            # add a table row
+    if not config.report_only_if_needed or report:
+        if report:
+            text = ["Below is the table of users who hit a limit since the last cleanup:", ""]
+            # dist to groups deltas by ids
+            report_d = collections.defaultdict(list)
+            max_d = {'id': 2, 'delta': 5, 'hit': 3}
+            for (id, delta, hit) in report:
+                report_d[id].append((delta, hit))
+                max_d['id'] = max(max_d['id'], len(id))
+                max_d['delta'] = max(max_d['delta'], len(str(delta)))
+                max_d['hit'] = max(max_d['hit'], len(str(hit)))
+            # sort by hits
+            report.sort(key=lambda x: x[2])
+            # table header
             text.append(
-                "|%s|%s|%s|\n" % (
-                    print_fw(id, max_d['id'], align_left=False),
-                    print_fw("%ss" % delta, max_d['delta'], align_left=False),
-                    print_fw(hit, max_d['hit'], align_left=False)
+                "|%s|%s|%s|" % (
+                    print_fw("id", max_d['id']),
+                    print_fw("delta", max_d['delta']),
+                    print_fw("hit", max_d['hit'])
+                )
+            )
+            # table header/data separation
+            text.append(
+                "|%s+%s+%s|" % (
+                    print_fw("", max_d['id'], filler='-'),
+                    print_fw("", max_d['delta'], filler='-'),
+                    print_fw("", max_d['hit'], filler='-')
                 )
             )
 
-    # Start building the mail report
-    msg = MIMEMultipart()
-    msg['Subject'] = config.report_subject or ""
-    msg['From'] = config.report_from or ""
-    msg['To'] = config.report_to
-    msg.attach(MIMEText("".join(text), 'plain'))
+            for (id, _, _) in report:
+                # sort by delta
+                report_d[id].sort()
+                for (delta, hit) in report_d[id]:
+                    # add a table row
+                    text.append(
+                        "|%s|%s|%s|" % (
+                            print_fw(id, max_d['id'], align_left=False),
+                            print_fw("%ss" % delta, max_d['delta'], align_left=False),
+                            print_fw(hit, max_d['hit'], align_left=False)
+                        )
+                    )
+        else:
+            text = ["No user hit a limit since the last cleanup"]
+        text.extend(["", "-- ", "policyd-rate-limit"])
 
-    # check that smtp_server is wekk formated
-    if isinstance(config.smtp_server, tuple):
-        if len(config.smtp_server) >= 2:
-            server = smtplib.SMTP(config.smtp_server[0], config.smtp_server[1])
-        elif len(config.smtp_server) == 1:
-            server = smtplib.SMTP(config.smtp_server[0], 25)
+        # Start building the mail report
+        msg = MIMEMultipart()
+        msg['Subject'] = config.report_subject or ""
+        msg['From'] = config.report_from or ""
+        msg['To'] = config.report_to
+        msg.attach(MIMEText("\n".join(text), 'plain'))
+
+        # check that smtp_server is wekk formated
+        if isinstance(config.smtp_server, tuple):
+            if len(config.smtp_server) >= 2:
+                server = smtplib.SMTP(config.smtp_server[0], config.smtp_server[1])
+            elif len(config.smtp_server) == 1:
+                server = smtplib.SMTP(config.smtp_server[0], 25)
+            else:
+                raise ValueError("bad smtp_server should be a tuple (server_adress, port)")
         else:
             raise ValueError("bad smtp_server should be a tuple (server_adress, port)")
-    else:
-        raise ValueError("bad smtp_server should be a tuple (server_adress, port)")
 
-    try:
-        # should we use starttls ?
-        if config.smtp_starttls:
-            server.starttls()
-        # should we use credentials ?
-        if config.smtp_credentials:
-            if isinstance(config.smtp_credentials, tuple) and len(config.smtp_credentials) >= 2:
-                server.login(config.smtp_credentials[0], config.smtp_credentials[1])
-            else:
-                ValueError("bad smtp_credentials should be a tuple (login, password)")
-        server.sendmail(config.report_from or "", config.report_to, msg.as_string())
-    finally:
-        server.quit()
+        try:
+            # should we use starttls ?
+            if config.smtp_starttls:
+                server.starttls()
+            # should we use credentials ?
+            if config.smtp_credentials:
+                if isinstance(config.smtp_credentials, tuple) and len(config.smtp_credentials) >= 2:
+                    server.login(config.smtp_credentials[0], config.smtp_credentials[1])
+                else:
+                    ValueError("bad smtp_credentials should be a tuple (login, password)")
+            server.sendmail(config.report_from or "", config.report_to, msg.as_string())
+        finally:
+            server.quit()
 
-    # The mail report has been successfully send, flush limit_report
-    cur.execute("DELETE FROM limit_report")
+        # The mail report has been successfully send, flush limit_report
+        cur.execute("DELETE FROM limit_report")
 
 
 def database_init():

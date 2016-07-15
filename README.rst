@@ -98,6 +98,8 @@ If not found, then in ``/etc/policyd-rate-limit.conf``, and if not found use the
 * ``report_subject``: Subject of the report email. The default is ``"policyd-rate-limit report"``.
 * ``report_limits``: List of number of seconds from the limits list for which you want to be reported.
   The default is ``[86400]``.
+* ``report_only_if_needed``: Only send a report if some users have reach a reported limit.
+  The default is ``True``.
 
 
 * ``smtp_server``: The smtp server to use to send emails ``("host", port)``.
