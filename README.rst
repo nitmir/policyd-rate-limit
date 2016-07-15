@@ -113,9 +113,24 @@ If not found, then in ``/etc/policyd-rate-limit.conf``, and if not found use the
 Postfix settings
 ----------------
 
-/etc/postfix/main.cf::
+For postfix 3.0 and later I recommend using the example below. It ensure that if policyd-rate-limit
+become unavailable for any reason, postfix will ignore it and keep accepting mail as if the rule
+was not here. I find it nice has in my opinion, policyd-rate-limit is a "non-critical" policy
+service.
 
-    smtpd_recipient_restrictions =
-        ...,
-        check_policy_service {unix:ratelimit/policy, default_action=DUNNO},
-        ...
+    /etc/postfix/main.cf::
+
+        smtpd_recipient_restrictions =
+            ...,
+            check_policy_service { unix:ratelimit/policy, default_action=DUNNO },
+            ...
+
+
+On previous postfix versions, you must use:
+
+    /etc/postfix/main.cf::
+
+        smtpd_recipient_restrictions =
+            ...,
+            check_policy_service unix:ratelimit/policy,
+            ...

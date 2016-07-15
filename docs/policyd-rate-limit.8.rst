@@ -33,15 +33,24 @@ address exceeds one or more configurable limits.
 Setup
 =====
 
-For example, you can set in postfix **/etc/postfix/main.cf** configuration file::
+For example, for postfix 3.0 and later, you can set in postfix **/etc/postfix/main.cf**
+configuration file::
 
   smtpd_recipient_restrictions =
     ...,
-    check_policy_service {unix:ratelimit/policy, default_action=DUNNO},
+    check_policy_service { unix:ratelimit/policy, default_action=DUNNO },
     ...
 
 Postfix will ask policyd-rate-limit what to do on mail reception (success or fail action)
 and will accept mail if policyd-rate-limit become unavailable.
+
+
+On previous postfix versions, you must use::
+
+  smtpd_recipient_restrictions =
+    ...,
+    check_policy_service unix:ratelimit/policy,
+    ...
 
 
 Options
