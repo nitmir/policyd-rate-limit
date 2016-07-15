@@ -358,7 +358,7 @@ def database_init():
     with cursor() as cur:
         query = """CREATE TABLE IF NOT EXISTS mail_count (
       id varchar(40) NOT NULL,
-      date int NOT NULL
+      date bigint NOT NULL
     );"""
         # if report is enable, also create the table for storing report datas
         if config.report:
