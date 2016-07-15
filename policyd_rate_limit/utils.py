@@ -348,14 +348,14 @@ def database_init():
     with cursor() as cur:
         query = """CREATE TABLE IF NOT EXISTS mail_count (
       id varchar(40) NOT NULL,
-      date int(32) NOT NULL
+      date int NOT NULL
     );"""
         # if report is enable, also create the table for storing report datas
         if config.report:
             query_report = """CREATE TABLE IF NOT EXISTS limit_report (
       id varchar(40) NOT NULL,
-      delta int(32) NOT NULL,
-      hit int(32) NOT NULL DEFAULT 0
+      delta int NOT NULL,
+      hit int NOT NULL DEFAULT 0
     );"""
         try:
             if cursor.backend == MYSQL_DB:

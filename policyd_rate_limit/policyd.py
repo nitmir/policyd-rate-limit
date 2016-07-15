@@ -186,19 +186,22 @@ class Policyd(object):
                 # for each limit periods, we count the number of mails already send.
                 # if the a limit is reach, we change action to fail (deny the mail).
                 for mail_nb, delta in config.limits:
-                    if cur.execute(
+                    cur.execute(
                         (
                             "SELECT COUNT(*) FROM mail_count "
                             "WHERE id = %s AND date >= %s"
                         ) % ((config.format_str,)*2),
                         (id, int(time.time() - delta))
-                    ):
-                        nb = cur.fetchone()[0]
-                        if nb >= mail_nb:
-                            action = config.fail_action
-                            if config.report and delta in config.report_limits:
-                                utils.hit(cur, delta, id)
-                            raise Pass()
+                    )
+                    nb = cur.fetchone()[0]
+                    if config.debug:
+                        sys.stderr.write("%03d/%03d hit since %ss\n" % (nb, mail_nb, delta))
+                        sys.stderr.flush()
+                    if nb >= mail_nb:
+                        action = config.fail_action
+                        if config.report and delta in config.report_limits:
+                            utils.hit(cur, delta, id)
+                        raise Pass()
             except Pass:
                 pass
             # If action is a success, record in the database that a new mail has just been sent
