@@ -90,7 +90,7 @@ class LazyConfig(object):
             cursor = make_cursor("pgsql_cursor", config.backend, config.pgsql_config)
             self.format_str = "%s"
         else:
-            raise RuntimeError("backend %s unknown" % config.backend)
+            raise ValueError("backend %s unknown" % config.backend)
 
 
 def make_directories():
@@ -265,6 +265,26 @@ def clean():
         # if report is True, generate a mail report
         if config.report and config.report_to:
             send_report(cur)
+            # The mail report has been successfully send, flush limit_report
+            cur.execute("DELETE FROM limit_report")
+
+    try:
+        if config.backend == PGSQL_DB:
+            # setting autocommit to True disable the transations. This is needed to run VACUUM
+            cursor.get_db().autocommit = True
+        with cursor() as cur:
+            if config.backend == PGSQL_DB:
+                cur.execute("VACUUM ANALYZE")
+            elif config.backend == SQLITE_DB:
+                cur.execute("VACUUM")
+            elif config.backend == MYSQL_DB:
+                if config.report:
+                    cur.execute("OPTIMIZE TABLE mail_count, limit_report")
+                else:
+                    cur.execute("OPTIMIZE TABLE mail_count")
+    finally:
+        if config.backend == PGSQL_DB:
+            cursor.get_db().autocommit = False
 
 
 def send_report(cur):
@@ -348,9 +368,6 @@ def send_report(cur):
             server.sendmail(config.report_from or "", config.report_to, msg.as_string())
         finally:
             server.quit()
-
-        # The mail report has been successfully send, flush limit_report
-        cur.execute("DELETE FROM limit_report")
 
 
 def database_init():
