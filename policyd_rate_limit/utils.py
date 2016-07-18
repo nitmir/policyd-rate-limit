@@ -12,7 +12,7 @@
 import os
 import threading
 import collections
-import netaddr
+import ipaddress
 import time
 import imp
 import pwd
@@ -24,6 +24,13 @@ from email.mime.multipart import MIMEMultipart
 
 from policyd_rate_limit.const import SQLITE_DB, MYSQL_DB, PGSQL_DB
 from policyd_rate_limit import config as default_config
+
+
+def ip_network(ip_str):
+    try:
+        return ipaddress.IPv4Network(ip_str)
+    except ipaddress.AddressValueError:
+        return ipaddress.IPv6Network(ip_str)
 
 
 class Config(object):
@@ -53,7 +60,7 @@ class Config(object):
                 )
             )
 
-        self.limited_netword = [netaddr.IPNetwork(net) for net in self.limited_netword]
+        self.limited_netword = [ip_network(net) for net in self.limited_netword]
 
     def __getattr__(self, name):
         try:
@@ -235,7 +242,10 @@ class _cursor(object):
 
 def is_ip_limited(ip):
     """Check if ``ip`` is part of a network of ``config.limited_netword``"""
-    ip = netaddr.IPAddress(ip)
+    try:
+        ip = ipaddress.IPv4Address(ip)
+    except ipaddress.AddressValueError:
+        ip = ipaddress.IPv6Address(ip)
     for net in config.limited_netword:
         if ip in net:
             return True

@@ -64,6 +64,6 @@ setup(
         'Topic :: Communications :: Email :: Mail Transport Agents',
         'Topic :: Communications :: Email :: Filters',
     ],
-    install_requires=["netaddr >= 0.7"],
+    install_requires=[],
     zip_safe=False,
 )
