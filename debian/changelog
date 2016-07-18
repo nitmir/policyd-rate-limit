@@ -1,5 +1,10 @@
-policyd-rate-limit (0.5.0-1) unstable; urgency=low
+policyd-rate-limit (0.5.1-1) unstable; urgency=low
 
   * Initial release. (Closes: #831456)
+  * Disable the usage of upstream init scripts (patch ignore-init-service.patch)
+    and use policyd-rate-limit.service and policyd-rate-limit.init instead.
+    They are identical to the upstream ones except for /usr/local/bin/ replaced
+    by /usr/bin/. It also let dh_installdeb automatically setup symbolic links
+    in rc* in postinst and postrm.
 
- -- Valentin Samir <valentin.samir@crans.org>  Sat, 16 Jul 2016 12:40:10 +0200
+ -- Valentin Samir <valentin.samir@crans.org>  Mon, 18 Jul 2016 20:19:00 +0200

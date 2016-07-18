@@ -1,4 +1,7 @@
-Description: disable setup.py init script and unit file installation
+Description: disable installation by setup.py of init script and unit file installation
+ policyd-rate-limit.service and policyd-rate-limit.init are identical except for
+ /usr/local/bin/ replaced by /usr/bin/. It also let dh_installdeb automatically
+ setup symbolic links in rc* in postinst and postrm.
 Author: Valentin Samir <valentin.samir@crans.org>
 
 ---
