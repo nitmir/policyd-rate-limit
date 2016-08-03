@@ -10,6 +10,7 @@
 # (c) 2015-2016 Valentin Samir
 # -*- mode: python; coding: utf-8 -*-
 import os
+import sys
 import threading
 import collections
 import ipaddress
@@ -35,6 +36,8 @@ def ip_network(ip_str):
 
 class Config(object):
     """Act as a config module, missing parameters fallbacks to default_config"""
+    _config = None
+    config_file = None
     def __init__(self, config_file=None):
         if config_file is None:
             # search for config files in the following locations
@@ -65,7 +68,7 @@ class Config(object):
                     pass
         # if not config file found, raise en error
         else:
-            raise ValueError(
+            sys.stderr.write(
                 "No config file found or bad permissions, searched for %s" % (
                     ", ".join(config_files),
                 )
