@@ -46,7 +46,9 @@ if __name__ == "__main__":
         # if user/group from config do not exists, a ValueError is raised and we exit.
         except ValueError as error:
             sys.stderr.write("%s\n" % error)
-            sys.exit(2)
+            # continue running if asking for the value of a config param
+            if not args.get_config:
+                sys.exit(2)
     # ask for the value of a config param, print it and exit
     if args.get_config:
         try:
