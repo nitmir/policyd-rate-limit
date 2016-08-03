@@ -49,6 +49,17 @@ class Config(object):
                 try:
                     self._config = imp.load_source('config', config_file)
                     self.config_file = config_file
+                    cache_file = imp.cache_from_source(config_file)
+                    # remove the config pyc file
+                    try:
+                        os.remove(cache_file)
+                    except OSError:
+                        pass
+                    # remove the __pycache__ dir of the config pyc file if empty
+                    try:
+                        os.rmdir(os.path.dirname(cache_file))
+                    except OSError:
+                        pass
                     break
                 except PermissionError:
                     pass
