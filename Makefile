@@ -32,3 +32,6 @@ man_files:
 
 dist:
 	python3 setup.py sdist
+
+publish_pypi_release:
+	python setup.py sdist upload --sign
