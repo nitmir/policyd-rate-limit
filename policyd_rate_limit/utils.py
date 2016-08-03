@@ -38,6 +38,7 @@ class Config(object):
     """Act as a config module, missing parameters fallbacks to default_config"""
     _config = None
     config_file = None
+
     def __init__(self, config_file=None):
         if config_file is None:
             # search for config files in the following locations
