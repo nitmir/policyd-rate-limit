@@ -4,4 +4,5 @@ include Makefile
 include init/policyd-rate-limit.service
 include init/policyd-rate-limit
 include docs/policyd-rate-limit.8.rst
-include docs/policyd-rate-limit.conf.5.rst
+include docs/policyd-rate-limit.yaml.5.rst
+include policyd_rate_limit/policyd-rate-limit.yaml
