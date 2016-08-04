@@ -17,7 +17,7 @@ reinstall: uninstall install
 purge: uninstall
 	rm -f /etc/policyd-rate-limit.conf /etc/policyd-rate-limit.yaml
 	rm -f /etc/init.d/policyd-rate-limit /etc/systemd/system/policyd-rate-limit.service
-	rm -f /var/lib/policyd-rate-limit/
+	rm -rf /var/lib/policyd-rate-limit/
 
 clean_pyc:
 	find ./ -name '*.pyc' -delete
