@@ -1,5 +1,5 @@
 =======================
-policyd-rate-limit.conf
+policyd-rate-limit.yaml
 =======================
 
 -------------------------------------------
@@ -7,10 +7,10 @@ policyd-rate-limit configuration parameters
 -------------------------------------------
 
 :Author: Valentin Samir <valentin.samir@crans.org>
-:Date: 2016-07-09
+:Date: 2016-08-04
 :Copyright: GPL-3
 :Version: 3.8
-:title_upper: policyd-rate-limit.conf
+:title_upper: policyd-rate-limit.yaml
 :Manual section: 5
 :Manual group: policyd-rate-limit
 
@@ -18,11 +18,16 @@ policyd-rate-limit configuration parameters
 Description
 ===========
 
-**policyd-rate-limit**)(8) uses a **python**)(1) style configuration file which is reads on startup.
+**policyd-rate-limit**)(8) was using a **python**)(1) style configuration file and not use a
+**yaml**)(3pm) file which is reads on startup. .conf files are the old python format confguration
+files and .yaml the new ones. Old style configuration files are deprecated and should not be used.
+
 If the **--file** option if not set, it searches for configuration files on the following paths::
 
   ~/.config/policyd-rate-limit.conf
+  ~/.config/policyd-rate-limit.yaml
   /etc/policyd-rate-limit.conf
+  /etc/policyd-rate-limit.yaml
 
 and exits if not found.
 
@@ -53,19 +58,19 @@ Settings
   Which data backend to use. Possible values are 0 for sqlite3, 1 for mysql and 2 for postgreysql.
   The default is 0, use the sqlite3 backend.
 **SOCKET**
-  The socket to bind to. Can be a path to an unix socket or a couple (ip, port). The default is
+  The socket to bind to. Can be a path to an unix socket or a couple [ip, port]. The default is
   "/var/spool/postfix/ratelimit/policy". policyd-rate-limit will try to create the parent
   directory and chown it if it do not exists.
 **socket_permission**
   Permissions on the unix socket (if unix socket used). The default is 0o666.
 **limits**
-  A list of couple (number of emails, number of seconds). If one of the element of the list is
+  A list of couple [number of emails, number of seconds]. If one of the element of the list is
   exceeded (more than 'number of emails' on 'number of seconds' for an ip address or an sasl
   username), postfix will return a temporary failure.
 **limit_by_sasl**
   Apply limits by sasl usernames. The default is True.
 **limit_by_ip**
-  Apply limits by ip addresses. The default is False.
+  Apply limits by ip addresses if sasl username is not found. The default is False.
 **limited_netword**
   A list of ip networks in cidr notation on which limits are applied. An empty list is equal to
   limit_by_ip = False, put "0.0.0.0/0" and ::/0 for every ip addresses.
@@ -98,14 +103,14 @@ Settings
 
 
 **smtp_server**
-  The smtp server to use to send emails ("host", port).
-  The default is ("localhost", 25).
+  The smtp server to use to send emails ["host", port].
+  The default is ["localhost", 25].
 **smtp_starttls**
   Should we use starttls to send mails ? (you should set this to True if
   you use **smtp_credentials**). The default is False.
 **smtp_credentials**
   Should we use credentials to connect to smtp_server ?
-  if yes set ("user", "password"), else None. The default is None.
+  if yes set ["user", "password"], else null. The default is null.
 
 
 See also

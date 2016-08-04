@@ -22,7 +22,7 @@ def add_data_file(dir, file, check_dir=False, mkdir=False):
 
 # if install as root populate /etc
 if os.getuid() == 0:
-    add_data_file("/etc", 'policyd_rate_limit/policyd-rate-limit.conf')
+    add_data_file("/etc", 'policyd_rate_limit/policyd-rate-limit.yaml')
     add_data_file('/etc/init.d', 'init/policyd-rate-limit')
     add_data_file(
         "/etc/systemd/system",
@@ -32,7 +32,7 @@ if os.getuid() == 0:
 # else use user .config dir
 else:
     conf_dir = os.path.expanduser("~/.config/")
-    add_data_file(conf_dir, 'policyd_rate_limit/policyd-rate-limit.conf', mkdir=True)
+    add_data_file(conf_dir, 'policyd_rate_limit/policyd-rate-limit.yaml', mkdir=True)
 
 
 setup(
@@ -44,7 +44,7 @@ setup(
     author_email='valentin.samir@crans.org',
     license='GPLv3',
     url='https://github.com/nitmir/policyd-rate-limit',
-    download_url="https://github.com/nitmir/policyd-rate-limit/releases",
+    download_url="https://github.com/nitmir/policyd-rate-limit/releases/latest",
     packages=['policyd_rate_limit'],
     package_data={
         'policyd_rate_limit': [
@@ -64,6 +64,6 @@ setup(
         'Topic :: Communications :: Email :: Mail Transport Agents',
         'Topic :: Communications :: Email :: Filters',
     ],
-    install_requires=[],
+    install_requires=["PyYAML >= 3.11"],
     zip_safe=False,
 )

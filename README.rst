@@ -15,15 +15,20 @@ postfix over several time periods, by sasl usernames and/or ip addresses.
 Installation
 ------------
 
-First, create the user that will run the daemon and its home directory::
+First, create the user that will run the daemon::
 
-    mkdir -p /var/lib/policyd-rate-limit
-    useradd policyd-rate-limit -d /var/lib/policyd-rate-limit
+    adduser --system --group --home /run/policyd-rate-limit --no-create-home policyd-rate-limit
+
+Since version 0.6.0, the configuration file is written using the yaml, so you need the following
+package:
+
+* `pyyaml <https://pypi.python.org/pypi/PyYAML>`_
+  (``sudo apt-get install python3-yaml`` on debian like systems)
 
 Depending of the backend storage you planning to use, you may need to install additional packages.
 (The default settings use the sqlite3 bakends and do not need extra packages).
 
-* `mysqldb <https://github.com/PyMySQL/mysqlclient-python>`_
+* `mysqldb <https://pypi.python.org/pypi/MySQL-python>`_
   (``sudo apt-get install python3-mysqldb`` on debian like systems) for the mysql backend.
 * `psycopg2 <https://pypi.python.org/pypi/psycopg2>`_
   (``sudo apt-get install python3-psycopg2`` on debian like systems) fot the postgreysql backend
@@ -56,7 +61,7 @@ Settings
 If not found, then in ``/etc/policyd-rate-limit.conf``, and if not found use the default config.
 
 * ``debug``: make ``policyd-rate-limit`` output logs to stderr.
-  The default is True.
+  The default is ``True``.
 * ``user``: The user ``policyd-rate-limit`` will use to drop privileges.
   The default is ``"policyd-rate-limit"``.
 * ``group``: The group ``policyd-rate-limit`` will use to drop privileges.
@@ -69,16 +74,17 @@ If not found, then in ``/etc/policyd-rate-limit.conf``, and if not found use the
 * ``sqlite_config``: The config to connect to a sqlite3 database.
 * ``backend``: Which data backend to use. Possible values are ``0`` for sqlite3, ``1`` for mysql
   and ``2`` for postgreysql. The default is ``0``, use the sqlite3 backend.
-* ``SOCKET``: The socket to bind to. Can be a path to an unix socket or a couple (ip, port).
+* ``SOCKET``: The socket to bind to. Can be a path to an unix socket or a couple [ip, port].
   The default is ``"/var/spool/postfix/ratelimit/policy"``.
   ``policyd-rate-limit`` will try to create the parent directory and chown it if it do not exists.
 * ``socket_permission``: Permissions on the unix socket (if unix socket used).
   The default is ``0o666``.
-* ``limits``: A list of couple (number of emails, number of seconds). If one of the element of the
+* ``limits``: A list of couple [number of emails, number of seconds]. If one of the element of the
   list is exeeded (more than 'number of emails' on 'number of seconds' for an ip address or an sasl
   username), postfix will return a temporary failure.
 * ``limit_by_sasl``: Apply limits by sasl usernames. The default is ``True``.
-* ``limit_by_ip``: Apply limits by ip addresses. The default is ``False``.
+* ``limit_by_ip``: Apply limits by ip addresses if sasl username is not found.
+  The default is ``False``.
 * ``limited_netword``: A list of ip networks in cidr notation on which limits are applied. An empty
   list is equal to ``limit_by_ip = False``, put ``"0.0.0.0/0"`` and ``::/0`` for every ip addresses.
 * ``success_action``: If not limits are reach, which action postfix should do. The default is
@@ -102,12 +108,12 @@ If not found, then in ``/etc/policyd-rate-limit.conf``, and if not found use the
   The default is ``True``.
 
 
-* ``smtp_server``: The smtp server to use to send emails ``("host", port)``.
-  The default is ``("localhost", 25)``.
+* ``smtp_server``: The smtp server to use to send emails ``["host", port]``.
+  The default is ``["localhost", 25]``.
 * ``smtp_starttls``: Should we use starttls to send mails ? (you should set this to ``True`` if
   you use ``smtp_credentials``). The default is ``False``.
 * ``smtp_credentials``: Should we use credentials to connect to smtp_server ?
-  if yes set ``("user", "password")``, else ``None``. The default is ``None``.
+  if yes set ``["user", "password"]``, else ``null``. The default is ``null``.
 
 
 Postfix settings

@@ -1,0 +1,82 @@
+# Make policyd-rate-limit output logs to stderr
+debug: True
+
+# The user policyd-rate-limit will use to drop privileges.
+user: "policyd-rate-limit"
+# The group policyd-rate-limit will use to drop privileges.
+group: "policyd-rate-limit"
+
+# path where the program will try to write its pid to.
+pidfile: "/var/run/policyd-rate-limit/policyd-rate-limit.pid"
+
+# The config to connect to a mysql server.
+mysql_config:
+    user: "username"
+    passwd: "*****"
+    db: "database"
+    host: "localhost"
+    charset: 'utf8'
+
+# The config to connect to a sqlite3 database.
+sqlite_config:
+    database: "/var/lib/policyd-rate-limit/db.sqlite3"
+
+# The config to connect to a postgreysql server.
+pgsql_config:
+    database: "database"
+    user: "username"
+    password: "*****"
+    host: "localhost"
+
+# Which data backend to use. Possible values are 0 for sqlite3, 1 for mysql and 2 for postgreysql.
+backend: 0
+
+# The socket to bind to. Can be a path to an unix socket or a couple [ip, port].
+# SOCKET: ["127.0.0.1", 8552]
+SOCKET: "/var/spool/postfix/ratelimit/policy"
+# Permissions on the unix socket (if unix socket used).
+socket_permission: 0666
+
+# A list of couple [number of emails, number of seconds]. If one of the element of the list is
+# exeeded (more than 'number of emails' on 'number of seconds' for an ip address or an sasl
+# username), postfix will return a temporary failure.
+limits:
+    - [10, 60] # limit to 10 mails by minutes
+    - [150, 86400] # limits to 150 mails by days
+
+# Apply limits by sasl usernames.
+limit_by_sasl: True
+# If no sasl username is found, apply limits by ip addresses.
+limit_by_ip: False
+
+# A list of ip networks in cidr notation on which limits are applied. An empty list is equal
+# to limit_by_ip: False, put "0.0.0.0/0" and "::/0" for every ip addresses.
+limited_netword: []
+
+# If not limits are reach, which action postfix should do.
+# see http://www.postfix.org/access.5.html for a list of actions.
+success_action: "dunno"
+# If a limit is reach, which action postfix should do.
+# see http://www.postfix.org/access.5.html for a list of actions.
+fail_action: "defer_if_permit Rate limit reach, retry later"
+
+# If True, send a report to report_to about users reaching limits each time --clean is called
+report: False
+# from who to send emails reports. Must be defined if report: True
+report_from: null
+# Address to send emails reports to. Must be defined if report: True
+report_to: null
+# Subject of the report email
+report_subject: "policyd-rate-limit report"
+# List of number of seconds from the limits list for which you want to be reported.
+report_limits: [86400]
+# Only send a report if some users have reach a reported limit.
+# Otherwise, empty reports may be sent.
+report_only_if_needed: True
+
+# The smtp server to use to send emails [host, port]
+smtp_server: ["localhost", 25]
+# Should we use starttls (you should set this to True if you use smtp_credentials)
+smtp_starttls: False
+# Should we use credentials to connect to smtp_server ? if yes set ["user", "password"], else null
+smtp_credentials: null

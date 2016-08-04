@@ -20,6 +20,7 @@ import pwd
 import grp
 import warnings
 import smtplib
+import yaml
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
@@ -43,34 +44,48 @@ class Config(object):
         if config_file is None:
             # search for config files in the following locations
             config_files = [
+                # will be deprecated in favor of .yaml file
                 os.path.expanduser("~/.config/policyd-rate-limit.conf"),
+                os.path.expanduser("~/.config/policyd-rate-limit.yaml"),
+                # will be deprecated in favor of .yaml file
                 "/etc/policyd-rate-limit.conf",
+                "/etc/policyd-rate-limit.yaml",
             ]
         else:
             config_files = [config_file]
         for config_file in config_files:
             if os.path.isfile(config_file):
                 try:
-                    self._config = imp.load_source('config', config_file)
+                    # compatibility with old config style in a python module
+                    if config_file.endswith(".conf"):
+                        self._config = imp.load_source('config', config_file)
+                        warnings.warn(
+                            "New configuration use a .yaml file. "
+                            "Please migrate to it and delete you .conf file"
+                        )
+                        cache_file = imp.cache_from_source(config_file)
+                        # remove the config pyc file
+                        try:
+                            os.remove(cache_file)
+                        except OSError:
+                            pass
+                        # remove the __pycache__ dir of the config pyc file if empty
+                        try:
+                            os.rmdir(os.path.dirname(cache_file))
+                        except OSError:
+                            pass
+                    # new config file use yaml
+                    else:
+                        with open(config_file) as f:
+                            self._config = yaml.load(f)
                     self.config_file = config_file
-                    cache_file = imp.cache_from_source(config_file)
-                    # remove the config pyc file
-                    try:
-                        os.remove(cache_file)
-                    except OSError:
-                        pass
-                    # remove the __pycache__ dir of the config pyc file if empty
-                    try:
-                        os.rmdir(os.path.dirname(cache_file))
-                    except OSError:
-                        pass
                     break
                 except PermissionError:
                     pass
         # if not config file found, raise en error
         else:
             sys.stderr.write(
-                "No config file found or bad permissions, searched for %s" % (
+                "No config file found or bad permissions, searched for %s\n" % (
                     ", ".join(config_files),
                 )
             )
@@ -79,9 +94,12 @@ class Config(object):
 
     def __getattr__(self, name):
         try:
-            return getattr(self._config, name)
+            if self.config_file.endswith(".yaml"):
+                return self._config[name]
+            else:
+                return getattr(self._config, name)
         # If an parameter is not defined in the config file, return its default value.
-        except AttributeError:
+        except (AttributeError, KeyError):
             return getattr(default_config, name)
 
 

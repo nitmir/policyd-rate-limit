@@ -6,16 +6,18 @@ build:
 
 install: dist
 	pip3 -V
-	[ ! -f /etc/policyd-rate-limit.conf ] && cp -n policyd_rate_limit/policyd-rate-limit.conf /etc/ || true
+	[ ! -f /etc/policyd-rate-limit.yaml ] && cp -n policyd_rate_limit/policyd-rate-limit.yaml /etc/ || true
 	cp -n init/policyd-rate-limit /etc/init.d
 	cp -n init/policyd-rate-limit.service /etc/systemd/system/ || true
-	pip3 install policyd-rate-limit -U --force-reinstall --no-deps -f ./dist/policyd-rate-limit-${VERSION}.tar.gz
+	pip3 install policyd-rate-limit -U --force-reinstall --no-deps --no-binary :all -f ./dist/policyd-rate-limit-${VERSION}.tar.gz
 	systemctl daemon-reload
 uninstall:
 	pip3 uninstall policyd-rate-limit || true
 reinstall: uninstall install
 purge: uninstall
-	rm -f /etc/policyd-rate-limit.conf /etc/init.d/policyd-rate-limit /etc/systemd/system/policyd-rate-limit.service
+	rm -f /etc/policyd-rate-limit.conf /etc/policyd-rate-limit.yaml
+	rm -f /etc/init.d/policyd-rate-limit /etc/systemd/system/policyd-rate-limit.service
+	rm -f /var/lib/policyd-rate-limit/
 
 clean_pyc:
 	find ./ -name '*.pyc' -delete
@@ -28,7 +30,7 @@ clean: clean_pyc clean_build
 man_files:
 	mkdir -p build/man/
 	rst2man  docs/policyd-rate-limit.8.rst | sed 's/)(/(/g' > build/man/policyd-rate-limit.8
-	rst2man  docs/policyd-rate-limit.conf.5.rst | sed 's/)(/(/g' > build/man/policyd-rate-limit.conf.5
+	rst2man  docs/policyd-rate-limit.yaml.5.rst | sed 's/)(/(/g' > build/man/policyd-rate-limit.yaml.5
 
 dist:
 	python3 setup.py sdist

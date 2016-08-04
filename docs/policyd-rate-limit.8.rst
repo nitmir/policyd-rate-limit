@@ -7,7 +7,7 @@ rate limiter SMTP policy daemon
 -------------------------------
 
 :Author: Valentin Samir <valentin.samir@crans.org>
-:Date: 2016-07-09
+:Date: 2016-08-04
 :Copyright: GPL-3
 :Version: 3.8
 :title_upper: policyd-rate-limit
@@ -83,8 +83,17 @@ Configuration
 =============
 
 If the option **--file** is not specified, **policyd-rate-limit**)(8) try to read its configuration
-from ~/.config/policyd-rate-limit.conf if it exists, else from /etc/policyd-rate-limit.conf.
-See **policyd-rate-limit.conf**)(5) for possible settings.
+from the following path and choose the first existing file::
+
+  ~/.config/policyd-rate-limit.conf
+  ~/.config/policyd-rate-limit.yaml
+  /etc/policyd-rate-limit.conf
+  /etc/policyd-rate-limit.yaml
+
+The .conf are the old configuration format. It was a python module and should not be used.
+The .yaml are the new configuration format using the YAML syntax. See YAML(3pm) for an overview of
+the format.
+See **policyd-rate-limit.yaml**)(5) for possible settings.
 
 
 Exit values
@@ -111,6 +120,6 @@ Exit values
 See also
 ========
 
-| **policyd-rate-limit.conf**)(5): policyd-rate-limit configuration file
+| **policyd-rate-limit.yaml**)(5): policyd-rate-limit configuration file
 | **master**)(5), Postfix master.cf file syntax
 | **access**)(5), Postfix SMTP access control table

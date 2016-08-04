@@ -58,6 +58,9 @@ if __name__ == "__main__":
             sys.exit(1)
     # else we gonna need the database so we initialize it
     else:
+        # do not lauch the daemon if no config file is found
+        if not config.config_file:
+            sys.exit(5)
         try:
             utils.database_init()
         except Exception as error:
