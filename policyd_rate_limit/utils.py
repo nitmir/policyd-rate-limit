@@ -90,7 +90,14 @@ class Config(object):
                 )
             )
 
-        self.limited_netword = [ip_network(net) for net in self.limited_netword]
+        try:
+            self.limited_networks = [ip_network(net) for net in self.limited_netword]
+            warnings.warn(
+                "The limited_netword config parameter is deprecated, please use "
+                "limited_networks instead."
+            )
+        except AttributeError:
+            self.limited_networks = [ip_network(net) for net in self.limited_networks]
 
     def __getattr__(self, name):
         try:
@@ -274,12 +281,12 @@ class _cursor(object):
 
 
 def is_ip_limited(ip):
-    """Check if ``ip`` is part of a network of ``config.limited_netword``"""
+    """Check if ``ip`` is part of a network of ``config.limited_networks``"""
     try:
         ip = ipaddress.IPv4Address(ip)
     except ipaddress.AddressValueError:
         ip = ipaddress.IPv6Address(ip)
-    for net in config.limited_netword:
+    for net in config.limited_networks:
         if ip in net:
             return True
     return False
@@ -404,7 +411,10 @@ def send_report(cur):
                 server.starttls()
             # should we use credentials ?
             if config.smtp_credentials:
-                if isinstance(config.smtp_credentials, (list, tuple)) and len(config.smtp_credentials) >= 2:
+                if (
+                    isinstance(config.smtp_credentials, (list, tuple)) and
+                    len(config.smtp_credentials) >= 2
+                ):
                     server.login(config.smtp_credentials[0], config.smtp_credentials[1])
                 else:
                     ValueError("bad smtp_credentials should be a tuple (login, password)")
