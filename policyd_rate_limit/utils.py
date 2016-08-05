@@ -60,8 +60,11 @@ class Config(object):
                     if config_file.endswith(".conf"):
                         self._config = imp.load_source('config', config_file)
                         warnings.warn(
-                            "New configuration use a .yaml file. "
-                            "Please migrate to it and delete you .conf file"
+                            (
+                                "New configuration use a .yaml file. "
+                                "Please migrate to it and delete you .conf file"
+                            ),
+                            stacklevel=3
                         )
                         cache_file = imp.cache_from_source(config_file)
                         # remove the config pyc file
@@ -93,8 +96,11 @@ class Config(object):
         try:
             self.limited_networks = [ip_network(net) for net in self.limited_netword]
             warnings.warn(
-                "The limited_netword config parameter is deprecated, please use "
-                "limited_networks instead."
+                (
+                    "The limited_netword config parameter is deprecated, please use "
+                    "limited_networks instead."
+                ),
+                stacklevel=3
             )
         except AttributeError:
             self.limited_networks = [ip_network(net) for net in self.limited_networks]
