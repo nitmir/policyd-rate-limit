@@ -388,7 +388,7 @@ def send_report(cur):
         msg.attach(MIMEText("\n".join(text), 'plain'))
 
         # check that smtp_server is wekk formated
-        if isinstance(config.smtp_server, tuple):
+        if isinstance(config.smtp_server, (list, tuple)):
             if len(config.smtp_server) >= 2:
                 server = smtplib.SMTP(config.smtp_server[0], config.smtp_server[1])
             elif len(config.smtp_server) == 1:
@@ -404,7 +404,7 @@ def send_report(cur):
                 server.starttls()
             # should we use credentials ?
             if config.smtp_credentials:
-                if isinstance(config.smtp_credentials, tuple) and len(config.smtp_credentials) >= 2:
+                if isinstance(config.smtp_credentials, (list, tuple)) and len(config.smtp_credentials) >= 2:
                     server.login(config.smtp_credentials[0], config.smtp_credentials[1])
                 else:
                     ValueError("bad smtp_credentials should be a tuple (login, password)")
