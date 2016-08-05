@@ -49,13 +49,13 @@ Settings
   The configuration to connect to a mysql server. It should be a dictionary of parameters to give
   to the MySQLdb.connect function. See the python3-mysqldb documentations.
 **pgsql_config**
-  The configuration to connect to a postgreysql server. It should be a dictionary of parameters to give
+  The configuration to connect to a postgresql server. It should be a dictionary of parameters to give
   to the psycopg2.connect function. See the python3-psycopg2 documentations.
 **sqlite_config**
   The configuration to connect to a sqlite3 database. It should be a dictionary of parameters to give
   to the sqlite3.connect function. See the python3 documentations.
 **backend**
-  Which data backend to use. Possible values are 0 for sqlite3, 1 for mysql and 2 for postgreysql.
+  Which data backend to use. Possible values are 0 for sqlite3, 1 for mysql and 2 for postgresql.
   The default is 0, use the sqlite3 backend.
 **SOCKET**
   The socket to bind to. Can be a path to an unix socket or a couple [ip, port]. The default is

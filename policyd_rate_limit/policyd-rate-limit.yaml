@@ -21,14 +21,14 @@ mysql_config:
 sqlite_config:
     database: "/var/lib/policyd-rate-limit/db.sqlite3"
 
-# The config to connect to a postgreysql server.
+# The config to connect to a postgresql server.
 pgsql_config:
     database: "database"
     user: "username"
     password: "*****"
     host: "localhost"
 
-# Which data backend to use. Possible values are 0 for sqlite3, 1 for mysql and 2 for postgreysql.
+# Which data backend to use. Possible values are 0 for sqlite3, 1 for mysql and 2 for postgresql.
 backend: 0
 
 # The socket to bind to. Can be a path to an unix socket or a couple [ip, port].

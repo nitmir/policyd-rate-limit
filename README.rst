@@ -31,7 +31,7 @@ Depending of the backend storage you planning to use, you may need to install ad
 * `mysqldb <https://pypi.python.org/pypi/MySQL-python>`_
   (``sudo apt-get install python3-mysqldb`` on debian like systems) for the mysql backend.
 * `psycopg2 <https://pypi.python.org/pypi/psycopg2>`_
-  (``sudo apt-get install python3-psycopg2`` on debian like systems) fot the postgreysql backend
+  (``sudo apt-get install python3-psycopg2`` on debian like systems) fot the postgresql backend
 
 Install with pip::
 
@@ -70,10 +70,10 @@ If not found, then in ``/etc/policyd-rate-limit.conf``, and if not found use the
   The default is ``"/var/run/policyd-rate-limit/policyd-rate-limit.pid"``.
   ``policyd-rate-limit`` will try to create the parent directory and chown it if it do not exists.
 * ``mysql_config``: The config to connect to a mysql server
-* ``pgsql_config``: The config to connect to a postgreysql server
+* ``pgsql_config``: The config to connect to a postgresql server
 * ``sqlite_config``: The config to connect to a sqlite3 database.
 * ``backend``: Which data backend to use. Possible values are ``0`` for sqlite3, ``1`` for mysql
-  and ``2`` for postgreysql. The default is ``0``, use the sqlite3 backend.
+  and ``2`` for postgresql. The default is ``0``, use the sqlite3 backend.
 * ``SOCKET``: The socket to bind to. Can be a path to an unix socket or a couple [ip, port].
   The default is ``"/var/spool/postfix/ratelimit/policy"``.
   ``policyd-rate-limit`` will try to create the parent directory and chown it if it do not exists.
