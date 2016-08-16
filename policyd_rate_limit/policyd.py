@@ -77,7 +77,7 @@ class Policyd(object):
             sock.bind(config.SOCKET)
             if isinstance(config.SOCKET, str):
                 os.chmod(config.SOCKET, config.socket_permission)
-            sock.listen(1)
+            sock.listen(5)
             self.socket_data_read[sock] = []
             if config.debug:
                 sys.stderr.write('waiting for connections\n')
@@ -92,7 +92,7 @@ class Policyd(object):
                     if socket == sock:
                         connection, client_address = sock.accept()
                         if config.debug:
-                            sys.stderr.write('connection from %s\n' % client_address)
+                            sys.stderr.write('connection from %s\n' % (client_address,))
                             sys.stderr.flush()
                         self.socket_data_read[connection] = []
                     # else there is data to read on a client socket

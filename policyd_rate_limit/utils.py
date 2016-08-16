@@ -108,12 +108,18 @@ class Config(object):
     def __getattr__(self, name):
         try:
             if self.config_file.endswith(".yaml"):
-                return self._config[name]
+                ret = self._config[name]
             else:
-                return getattr(self._config, name)
+                ret = getattr(self._config, name)
         # If an parameter is not defined in the config file, return its default value.
         except (AttributeError, KeyError):
-            return getattr(default_config, name)
+            ret = getattr(default_config, name)
+
+        if name == "SOCKET":
+            if isinstance(ret, list):
+                ret = tuple(ret)
+
+        return ret
 
 
 class LazyConfig(object):
