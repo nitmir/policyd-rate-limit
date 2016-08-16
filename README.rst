@@ -1,12 +1,7 @@
 Policyd rate limit
 ==================
 
-
-.. image:: https://img.shields.io/pypi/v/policyd-rate-limit.svg
-    :target: https://pypi.python.org/pypi/policyd-rate-limit
-
-.. image:: https://img.shields.io/pypi/l/policyd-rate-limit.svg
-    :target: https://www.gnu.org/licenses/gpl-3.0.html
+|github_version| |pypi_version| |license|
 
 Postfix policyd server allowing to limit the number of mails accepted by
 postfix over several time periods, by sasl usernames and/or ip addresses.
@@ -140,3 +135,13 @@ On previous postfix versions, you must use:
             ...,
             check_policy_service unix:ratelimit/policy,
             ...
+
+
+.. |pypi_version| image:: https://badges.genua.fr/pypi/v/policyd-rate-limit.svg
+    :target: https://pypi.python.org/pypi/policyd-rate-limit
+
+.. |github_version| image:: https://badges.genua.fr/github/tag/nitmir/policyd-rate-limit.svg?label=github
+    :target: https://github.com/nitmir/policyd-rate-limit/releases/latest
+
+.. |license| image:: https://badges.genua.fr/pypi/l/policyd-rate-limit.svg
+    :target: https://www.gnu.org/licenses/gpl-3.0.html
