@@ -44,6 +44,7 @@ class Policyd(object):
             sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
         else:
             raise ValueError("bad socket %s" % config.SOCKET)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock = sock
 
     def close_socket(self):
