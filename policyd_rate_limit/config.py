@@ -47,11 +47,15 @@ limits = [
     (150, 86400),  # limits to 150 mails by days
 ]
 
+# dict of id -> limit list. Used to override limits and use custom limits for
+# a particular id. Use an empty list for no limits for a particular id.
+# ids are sasl usernames or ip addresses
+limits_by_id = {}
+
 limit_by_sasl = True
 limit_by_ip = False
 
-limited_networks = [
-]
+limited_networks = []
 
 # actions return to postfix, see http://www.postfix.org/access.5.html for a list of actions.
 success_action = "dunno"

@@ -44,6 +44,16 @@ limits:
     - [10, 60] # limit to 10 mails by minutes
     - [150, 86400] # limits to 150 mails by days
 
+# dict of id -> limit list. Used to override limits and use custom limits for
+# a particular id. Use an empty list for no limits for a particular id.
+# ids are sasl usernames or ip addresses
+# limits_by_id:
+#     foo: []
+#     192.168.0.254:
+#         - [1000, 86400] # limits to 1000 mails by days
+#     2a01:240:fe3d:4:219:bbff:fe3c:4f76: []
+limits_by_id: {}
+
 # Apply limits by sasl usernames.
 limit_by_sasl: True
 # If no sasl username is found, apply limits by ip addresses.
@@ -53,7 +63,7 @@ limit_by_ip: False
 # to limit_by_ip: False, put "0.0.0.0/0" and "::/0" for every ip addresses.
 limited_networks: []
 
-# If not limits are reach, which action postfix should do.
+# If no limits are reach, which action postfix should do.
 # see http://www.postfix.org/access.5.html for a list of actions.
 success_action: "dunno"
 # If a limit is reach, which action postfix should do.
