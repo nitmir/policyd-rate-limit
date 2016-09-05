@@ -171,6 +171,11 @@ class Policyd(object):
                 utils.database_init()
             with utils.cursor() as cur:
                 try:
+                    # only care if the protocol states is RCTP. If the policy delegation in postfix
+                    # configuration is in smtpd_recipient_restrictions as said in the doc,
+                    # possible states are RCPT and VRFY.
+                    if u'protocol_state' in request and request[u'protocol_state'].upper() != "RCPT":
+                        raise Pass()
                     # if user is authenticated, we filter by sasl username
                     if config.limit_by_sasl and u'sasl_username' in request:
                         id = request[u'sasl_username']
