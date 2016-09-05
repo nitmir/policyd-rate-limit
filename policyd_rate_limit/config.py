@@ -56,6 +56,8 @@ limited_networks = [
 # actions return to postfix, see http://www.postfix.org/access.5.html for a list of actions.
 success_action = "dunno"
 fail_action = "defer_if_permit Rate limit reach, retry later"
+# action to return to postfix when we are unable to contect the database backend
+db_error_action = "dunno"
 
 
 # if True, send a report to report_email about users reaching limits each time --clean is called

@@ -86,6 +86,9 @@ If not found, then in ``/etc/policyd-rate-limit.conf``, and if not found use the
   ``"dunno"``. See http://www.postfix.org/access.5.html for possible actions.
 * ``fail_action``: If a limit is reach, which action postfix should do. The default is
   ``"defer_if_permit Rate limit reach, retry later"``.
+* ``db_error_action`` : If we are unable to to contect the database backend, which action postfix
+  should do. The default is ``"dunno"``. See http://www.postfix.org/access.5.html for possible
+  actions.
   See http://www.postfix.org/access.5.html for possible actions.
 * ``config_file``: This parameter is automatically set to the path of the configuration file
   currently in use. You can call it conjunction with **--get-config** to known which configuration

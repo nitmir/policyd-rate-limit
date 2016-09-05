@@ -39,6 +39,7 @@ class Config(object):
     """Act as a config module, missing parameters fallbacks to default_config"""
     _config = None
     config_file = None
+    database_is_initialized = False
 
     def __init__(self, config_file=None):
         if config_file is None:
@@ -280,8 +281,9 @@ class _cursor(object):
                     self.cur.execute("SELECT 0")
                     self.cur.fetchone()
             except self.backend_module.Error as error:
-                # SQL server has gone away, probably a timeout
-                if error.args[0] in [2006, 8000, 8003, 8006]:
+                # SQL server has gone away, probably a timeout, try to reconnect
+                # else, query on the returned cursor will raise on exception
+                if error.args[0] in [2002, 2003, 2006, 2013, 8000, 8001, 8003, 8004, 8006]:
                     self.del_db()
                     self.cur.close()
                     self.cur = self.get_db().cursor()
@@ -459,17 +461,24 @@ def database_init():
         finally:
             warnings.resetwarnings()
         try:
-            cur.execute('CREATE INDEX mail_count_index ON mail_count(id, date)')
+            cur.execute('CREATE INDEX %s mail_count_index ON mail_count(id, date)' % (
+                "" if cursor.backend == 1 else "IF NOT EXISTS"
+            ))
         except cursor.backend_module.Error as error:
-            if error.args[0] == 'index mail_count_index already exists':
-                pass
+            # Duplicate key name for the mysql backend
+            if error.args[0] not in [1061]:
+                raise
         # if report is enable, create and unique index on (id, delta)
         if config.report:
             try:
-                cur.execute('CREATE UNIQUE INDEX limit_report_index ON limit_report(id, delta)')
+                cur.execute('CREATE UNIQUE INDEX %s limit_report_index ON limit_report(id, delta)'% (
+                "" if cursor.backend == 1 else "IF NOT EXISTS"
+            ))
             except cursor.backend_module.Error as error:
-                if error.args[0] == 'index limit_report_index already exists':
-                    pass
+                # Duplicate key name for the mysql backend
+                if error.args[0] not in [1061]:
+                    raise
+    config.database_is_initialized = True
 
 
 def hit(cur, delta, id):

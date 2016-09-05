@@ -166,53 +166,60 @@ class Policyd(object):
         id = None
         # By default, we do not block emails
         action = config.success_action
-        with utils.cursor() as cur:
-            try:
-                # if user is authenticated, we filter by sasl username
-                if config.limit_by_sasl and u'sasl_username' in request:
-                    id = request[u'sasl_username']
-                # else, if activated, we filter by ip source addresse
-                elif (
-                    config.limit_by_ip and
-                    u'client_address' in request and
-                    utils.is_ip_limited(request[u'client_address'])
-                ):
-                    id = request[u'client_address']
-                # if the client neither send us client ip adresse nor sasl username, jump
-                # to the next section
-                else:
-                    raise Pass()
-                # Here we are limiting agains sasl username or ip source addresses.
-                # for each limit periods, we count the number of mails already send.
-                # if the a limit is reach, we change action to fail (deny the mail).
-                for mail_nb, delta in config.limits:
-                    cur.execute(
-                        (
-                            "SELECT COUNT(*) FROM mail_count "
-                            "WHERE id = %s AND date >= %s"
-                        ) % ((config.format_str,)*2),
-                        (id, int(time.time() - delta))
-                    )
-                    nb = cur.fetchone()[0]
-                    if config.debug:
-                        sys.stderr.write("%03d/%03d hit since %ss\n" % (nb, mail_nb, delta))
-                        sys.stderr.flush()
-                    if nb >= mail_nb:
-                        action = config.fail_action
-                        if config.report and delta in config.report_limits:
-                            utils.hit(cur, delta, id)
+        try:
+            if not config.database_is_initialized:
+                utils.database_init()
+            with utils.cursor() as cur:
+                try:
+                    # if user is authenticated, we filter by sasl username
+                    if config.limit_by_sasl and u'sasl_username' in request:
+                        id = request[u'sasl_username']
+                    # else, if activated, we filter by ip source addresse
+                    elif (
+                        config.limit_by_ip and
+                        u'client_address' in request and
+                        utils.is_ip_limited(request[u'client_address'])
+                    ):
+                        id = request[u'client_address']
+                    # if the client neither send us client ip adresse nor sasl username, jump
+                    # to the next section
+                    else:
                         raise Pass()
-            except Pass:
-                pass
-            # If action is a success, record in the database that a new mail has just been sent
-            if action == config.success_action and id is not None:
-                if config.debug:
-                    sys.stderr.write(u"insert id %s\n" % id)
-                    sys.stderr.flush()
-                cur.execute(
-                    "INSERT INTO mail_count VALUES (%s, %s)" % ((config.format_str,)*2),
-                    (id, int(time.time()))
-                )
+                    # Here we are limiting agains sasl username or ip source addresses.
+                    # for each limit periods, we count the number of mails already send.
+                    # if the a limit is reach, we change action to fail (deny the mail).
+                    for mail_nb, delta in config.limits:
+                        cur.execute(
+                            (
+                                "SELECT COUNT(*) FROM mail_count "
+                                "WHERE id = %s AND date >= %s"
+                            ) % ((config.format_str,)*2),
+                            (id, int(time.time() - delta))
+                        )
+                        nb = cur.fetchone()[0]
+                        if config.debug:
+                            sys.stderr.write("%03d/%03d hit since %ss\n" % (nb, mail_nb, delta))
+                            sys.stderr.flush()
+                        if nb >= mail_nb:
+                            action = config.fail_action
+                            if config.report and delta in config.report_limits:
+                                utils.hit(cur, delta, id)
+                            raise Pass()
+                except Pass:
+                    pass
+                # If action is a success, record in the database that a new mail has just been sent
+                if action == config.success_action and id is not None:
+                    if config.debug:
+                        sys.stderr.write(u"insert id %s\n" % id)
+                        sys.stderr.flush()
+                    cur.execute(
+                        "INSERT INTO mail_count VALUES (%s, %s)" % ((config.format_str,)*2),
+                        (id, int(time.time()))
+                    )
+        except utils.cursor.backend_module.Error as error:
+            utils.cursor.del_db()
+            action = config.db_error_action
+            sys.stderr.write("Database error: %r\n" % error)
         data = u"action=%s\n\n" % action
         if config.debug:
             sys.stderr.write(data)

@@ -61,11 +61,13 @@ if __name__ == "__main__":
         # do not lauch the daemon if no config file is found
         if not config.config_file:
             sys.exit(5)
+        # we try to initialize the database.
         try:
             utils.database_init()
+        # If initialization fail, lauch policyd-rate-limit anyway, we will try to initialize it
+        # later, the database is maybe just not available right now.
         except Exception as error:
             sys.stderr.write("Fail to initialize database: %s\n" % error)
-            sys.exit(7)
         # if database cleaning requested, remove old records and exit
         if args.clean:
             try:

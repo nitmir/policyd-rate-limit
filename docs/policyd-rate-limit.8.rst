@@ -113,8 +113,6 @@ Exit values
 
   **6**   Some error was raised during runtime
 
-  **7**   Fail to initialize database
-
   **8**   Error during cleaning
 
 See also
