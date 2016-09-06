@@ -1,0 +1,47 @@
+before_script:
+- pip install tox setuptools
+
+flake8:
+  image: "python:3"
+  cache:
+    key: flake8
+    paths:
+    - .tox/flake8
+  script:
+  - tox -e flake8
+
+check_rst:
+  image: "python:3"
+  cache:
+    key: check_rst
+    paths:
+    - .tox/check_rst
+  script:
+  - tox -e check_rst
+
+py34:
+  image: "python:3.4"
+  cache:
+    key: py34
+    paths:
+    - .tox/py34
+  script:
+  - tox -e py34
+
+py35:
+  image: "python:3.5"
+  cache:
+    key: py35
+    paths:
+    - .tox/py35
+  script:
+  - tox -e py35
+
+coverage:
+  image: "python:3"
+  cache:
+    key: coverage
+    paths:
+    - .tox/coverage
+  script:
+  - tox -e coverage

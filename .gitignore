@@ -5,3 +5,10 @@
 build/
 dist/
 test_venv
+.coverage
+.tox/
+coverage.xml
+htmlcov/
+tox_logs/
+.cache/
+

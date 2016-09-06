@@ -34,16 +34,16 @@ class Policyd(object):
             try:
                 os.remove(config.SOCKET)
             except OSError:
-                if os.path.exists(config.SOCKET):
+                if os.path.exists(config.SOCKET):  # pragma: no cover (should not happen)
                     raise
             sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         # else asume its a tuple (bind_ip, bind_port)
-        elif '.' in config.SOCKET[0]:  # assume ipv4 bind addresse
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         elif ':' in config.SOCKET[0]:  # assume ipv6 bind addresse
             sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+        elif '.' in config.SOCKET[0]:  # assume ipv4 bind addresse
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         else:
-            raise ValueError("bad socket %s" % config.SOCKET)
+            raise ValueError("bad socket %s" % (config.SOCKET,))
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.sock = sock
 
@@ -54,7 +54,7 @@ class Policyd(object):
         if isinstance(config.SOCKET, str):
             try:
                 os.remove(config.SOCKET)
-            except OSError as error:
+            except OSError as error:  # pragma: no cover (should not happen)
                 sys.stderr.write("%s\n" % error)
                 sys.stderr.flush()
 
@@ -111,7 +111,7 @@ class Policyd(object):
                     # the socket has been closed during read
                     except KeyError:
                         pass
-        except KeyboardInterrupt:
+        except (KeyboardInterrupt, utils.Exit):
             for socket in self.socket_data_read.keys():
                 if socket != self.sock:
                     self.close_connection(sock)
@@ -154,7 +154,7 @@ class Policyd(object):
                 self.action(connection, request)
             else:
                 self.socket_data_read[connection] = buffer
-        except KeyboardInterrupt:
+        except (KeyboardInterrupt, utils.Exit):
             self.close_connection(connection)
             raise
         except Exception as error:
@@ -175,7 +175,7 @@ class Policyd(object):
                     # only care if the protocol states is RCTP. If the policy delegation in postfix
                     # configuration is in smtpd_recipient_restrictions as said in the doc,
                     # possible states are RCPT and VRFY.
-                    if u'protocol_state' in request and request[u'protocol_state'].upper() != "RCPT":
+                    if 'protocol_state' in request and request['protocol_state'].upper() != "RCPT":
                         raise Pass()
                     # if user is authenticated, we filter by sasl username
                     if config.limit_by_sasl and u'sasl_username' in request:

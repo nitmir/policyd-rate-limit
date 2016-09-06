@@ -24,8 +24,13 @@ clean_pyc:
 	find ./ -name __pycache__ -delete
 clean_build:
 	rm -rf build policyd_rate_limit.egg-info dist
-clean: clean_pyc clean_build
+clean_coverage:
+	rm -rf htmlcov .coverage coverage.xml
+clean_tox:
+	rm -rf .tox tox_logs
+clean: clean_pyc clean_build clean_coverage
 	find ./ -name '*~' -delete
+clean_all: clean clean_tox
 
 man_files:
 	mkdir -p build/man/
@@ -37,3 +42,7 @@ dist:
 
 publish_pypi_release:
 	python setup.py sdist upload --sign
+
+coverage: clean_coverage
+	py.test-3
+	python3-coverage html

@@ -13,12 +13,13 @@
 import os
 import sys
 import argparse
+import signal
 from policyd_rate_limit.policyd import Policyd
 from policyd_rate_limit import utils
 from policyd_rate_limit.utils import config
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no branch
     parser = argparse.ArgumentParser()
     parser.add_argument("--clean", help="clean old records from the database", action="store_true")
     parser.add_argument(
@@ -97,10 +98,11 @@ if __name__ == "__main__":
                         )
                         sys.exit(3)
                     except OSError as error:
-                        if error.errno != 3:  # No such process
+                        # No such process
+                        if error.errno != 3:  # pragma: no cover (should not happen)
                             raise
             # unable to read the pid from pidfile, so we continue
-            except ValueError:
+            except (ValueError, OSError):
                 pass
             try:
                 # we try to write our pid. On failure a ValueError is raised
@@ -109,12 +111,14 @@ if __name__ == "__main__":
                     p = Policyd()
                     try:
                         p.socket()
-                    except ValueError as error:
+                    except (ValueError, OSError) as error:
                         sys.stderr.write("%s\n" % error)
                         sys.exit(4)
                     try:
+                        # exit upon SIGUSR1 reception. Used for coverage computation
+                        signal.signal(signal.SIGUSR1, utils.exit_signal_handler)
                         p.run()
-                    except KeyboardInterrupt:
+                    except (KeyboardInterrupt, utils.Exit):
                         pass
                     finally:
                         p.close_socket()

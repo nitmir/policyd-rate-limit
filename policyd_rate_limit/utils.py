@@ -35,6 +35,10 @@ def ip_network(ip_str):
         return ipaddress.IPv6Network(ip_str)
 
 
+class Exit(Exception):
+    pass
+
+
 class Config(object):
     """Act as a config module, missing parameters fallbacks to default_config"""
     _config = None
@@ -58,7 +62,7 @@ class Config(object):
             if os.path.isfile(config_file):
                 try:
                     # compatibility with old config style in a python module
-                    if config_file.endswith(".conf"):
+                    if config_file.endswith(".conf"):  # pragma: no cover (deprecated)
                         self._config = imp.load_source('config', config_file)
                         warnings.warn(
                             (
@@ -94,7 +98,7 @@ class Config(object):
                 )
             )
 
-        try:
+        try:  # pragma: no cover (deprecated)
             self.limited_networks = [ip_network(net) for net in self.limited_netword]
             warnings.warn(
                 (
@@ -110,7 +114,7 @@ class Config(object):
         try:
             if self.config_file.endswith(".yaml"):
                 ret = self._config[name]
-            else:
+            else:  # pragma: no cover (deprecated)
                 ret = getattr(self._config, name)
         # If an parameter is not defined in the config file, return its default value.
         except (AttributeError, KeyError):
@@ -471,9 +475,11 @@ def database_init():
         # if report is enable, create and unique index on (id, delta)
         if config.report:
             try:
-                cur.execute('CREATE UNIQUE INDEX %s limit_report_index ON limit_report(id, delta)'% (
-                "" if cursor.backend == 1 else "IF NOT EXISTS"
-            ))
+                cur.execute(
+                    'CREATE UNIQUE INDEX %s limit_report_index ON limit_report(id, delta)' % (
+                          "" if cursor.backend == 1 else "IF NOT EXISTS"
+                    )
+                )
             except cursor.backend_module.Error as error:
                 # Duplicate key name for the mysql backend
                 if error.args[0] not in [1061]:
@@ -526,5 +532,10 @@ def get_config(dotted_string):
         obj = obj[param]
     return obj
 
+
+def exit_signal_handler(signal, frame):
+    """SIGUSR1 signal handler. Cause the program to exit gracefully.
+    Used for coverage computation"""
+    raise Exit()
 
 config = LazyConfig()
