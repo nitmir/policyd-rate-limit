@@ -112,7 +112,7 @@ class Policyd(object):
                     except KeyError:
                         pass
         except (KeyboardInterrupt, utils.Exit):
-            for socket in self.socket_data_read.keys():
+            for socket in list(self.socket_data_read.keys()):
                 if socket != self.sock:
                     self.close_connection(sock)
             raise
