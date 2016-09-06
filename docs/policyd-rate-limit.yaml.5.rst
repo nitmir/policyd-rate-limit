@@ -75,7 +75,7 @@ Settings
   Apply limits by sasl usernames. The default is True.
 **limit_by_ip**
   Apply limits by ip addresses if sasl username is not found. The default is False.
-**limited_netword**
+**limited_networks**
   A list of ip networks in cidr notation on which limits are applied. An empty list is equal to
   limit_by_ip = False, put "0.0.0.0/0" and ::/0 for every ip addresses.
 **success_action**
