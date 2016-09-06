@@ -147,6 +147,7 @@ On previous postfix versions, you must use:
     :target: https://travis-ci.org/nitmir/policyd-rate-limit
 
 .. |coverage| image:: https://badges.genua.fr/local/coverage/?project=policyd-rate-limit
+    :target: https://badges.genua.fr/local/coverage/policyd-rate-limit/
 
 .. |pypi_version| image:: https://badges.genua.fr/pypi/v/policyd-rate-limit.svg
     :target: https://pypi.python.org/pypi/policyd-rate-limit
