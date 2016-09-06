@@ -190,6 +190,19 @@ class DaemonTestCase(TestCase):
         with test_utils.lauch(self.base_config, options=["--clean"], get_process=True) as p:
             self.assertEqual(p.wait(), 8)
 
+    def test_limits_by_id(self):
+        self.base_config["limits_by_id"] = {'foo': [[2, 60]], 'bar': []}
+        with test_utils.lauch(self.base_config) as cfg:
+            self.base_test(cfg)
+            for i in range(20):
+                data = test_utils.send_policyd_request(cfg["SOCKET"], sasl_username="bar")
+                self.assertEqual(data.strip(), b"action=dunno")
+            for i in range(2):
+                data = test_utils.send_policyd_request(cfg["SOCKET"], sasl_username="foo")
+                self.assertEqual(data.strip(), b"action=dunno")
+            data = test_utils.send_policyd_request(cfg["SOCKET"], sasl_username="foo")
+            self.assertEqual(data.strip(), b"action=defer_if_permit Rate limit reach, retry later")
+
     def base_test(self, cfg):
         # test limit by sasl username
         for i in range(10):
