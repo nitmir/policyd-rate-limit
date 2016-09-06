@@ -1,0 +1,6 @@
+pyyaml
+pytest
+pytest-pythonpath
+pytest-warnings
+coverage
+

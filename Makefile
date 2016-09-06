@@ -28,9 +28,11 @@ clean_coverage:
 	rm -rf htmlcov .coverage coverage.xml
 clean_tox:
 	rm -rf .tox tox_logs
+clean_test_venv:
+	rm -rf test_venv
 clean: clean_pyc clean_build clean_coverage
 	find ./ -name '*~' -delete
-clean_all: clean clean_tox
+clean_all: clean clean_tox clean_test_venv
 
 man_files:
 	mkdir -p build/man/
@@ -43,7 +45,14 @@ dist:
 publish_pypi_release:
 	python setup.py sdist upload --sign
 
-coverage: clean_coverage
-	py.test-3
-	python3-coverage html
-	python3-coverage report
+test_venv/bin/python:
+	virtualenv -p python3 test_venv
+	test_venv/bin/pip3 install -U -r requirements-dev.txt
+
+test_venv: test_venv/bin/python
+
+
+coverage: clean_coverage test_venv
+	export PATH=test_venv/bin/:$$PATH; echo $$PATH; pytest
+	test_venv/bin/coverage html
+	test_venv/bin/coverage report
