@@ -46,3 +46,4 @@ publish_pypi_release:
 coverage: clean_coverage
 	py.test-3
 	python3-coverage html
+	python3-coverage report
