@@ -10,6 +10,7 @@
 # (c) 2015-2016 Valentin Samir
 
 import os
+import sys
 import socket
 import yaml
 import tempfile
@@ -107,6 +108,16 @@ def launch_instance(new_config, options=None, no_coverage=False):
     bin_path = os.path.abspath(
         os.path.join(os.path.dirname(__file__), '..', '..', 'policyd-rate-limit')
     )
+    # if bin_path do not exists, search in the PATH
+    if not os.path.isfile(bin_path):
+        for path in os.environ["PATH"].split(os.pathsep):
+            path = path.strip('"\'')
+            bin_path = os.path.join(path, 'policyd-rate-limit')
+            if os.path.isfile(bin_path):
+                sys.stderr.write("Using %s\n" % bin_path)
+                break
+        else:
+            raise RuntimeError("The binary policyd-rate-limit was not found, impossible to test it")
     if no_coverage:
         cmd = []
     else:
