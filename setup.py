@@ -45,7 +45,7 @@ setup(
     license='GPLv3',
     url='https://github.com/nitmir/policyd-rate-limit',
     download_url="https://github.com/nitmir/policyd-rate-limit/releases/latest",
-    packages=['policyd_rate_limit'],
+    packages=['policyd_rate_limit', 'policyd_rate_limit.tests'],
     package_data={
         'policyd_rate_limit': [
             'policyd-rate-limit.conf',
