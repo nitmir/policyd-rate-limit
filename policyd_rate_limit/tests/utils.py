@@ -100,6 +100,17 @@ def gen_config(new_config):
     return cfg_path
 
 
+def search_path(binary):
+    for path in os.environ["PATH"].split(os.pathsep):
+        path = path.strip('"\'')
+        bin_path = os.path.join(path, binary)
+        if os.path.isfile(bin_path):
+            return bin_path
+            break
+    else:
+        return False
+
+
 def launch_instance(new_config, options=None, no_coverage=False):
     if new_config:
         cfg_path = gen_config(new_config)
@@ -110,20 +121,22 @@ def launch_instance(new_config, options=None, no_coverage=False):
     )
     # if bin_path do not exists, search in the PATH
     if not os.path.isfile(bin_path):
-        for path in os.environ["PATH"].split(os.pathsep):
-            path = path.strip('"\'')
-            bin_path = os.path.join(path, 'policyd-rate-limit')
-            if os.path.isfile(bin_path):
-                sys.stderr.write("Using %s\n" % bin_path)
-                break
+        bin_path = search_path('policyd-rate-limit')
+        if bin_path:
+            sys.stderr.write("Using %s\n" % bin_path)
         else:
             raise RuntimeError("The binary policyd-rate-limit was not found, impossible to test it")
     if no_coverage:
         cmd = []
     else:
-        cmd = ["coverage", "run"]
-        if launch_instance.i > 0:
-            cmd.append("-a")
+        coverage_path = search_path('coverage')
+        if coverage_path:
+            cmd = ["coverage", "run"]
+            if launch_instance.i > 0:
+                cmd.append("-a")
+        else:
+            cmd = []
+            sys.stderr.write("The coverage binary was not found, not computing coverage\n")
     cmd.append(bin_path)
     if new_config:
         cmd.extend(["--file", cfg_path])
