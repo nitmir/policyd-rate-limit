@@ -68,7 +68,7 @@ Settings
   exceeded (more than 'number of emails' on 'number of seconds' for an ip address or an sasl
   username), postfix will return a temporary failure.
 **limits_by_id**
-  A dictionnary of id -> limit list (see limits). Used to override limits and use custom limits for
+  A dictionary of id -> limit list (see limits). Used to override limits and use custom limits for
   a particular id. Use an empty list for no limits for a particular id. Ids are sasl usernames or
   ip addresses. The default is {}.
 **limit_by_sasl**
