@@ -49,6 +49,7 @@ setup(
     package_data={
         'policyd_rate_limit': [
             'policyd-rate-limit.conf',
+            'policyd-rate-limit.yaml',
         ]
     },
     keywords=['Postfix', 'rate', 'limit', 'email'],
