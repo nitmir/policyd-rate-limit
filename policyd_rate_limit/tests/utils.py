@@ -145,6 +145,8 @@ def launch_instance(new_config, options=None, no_coverage=False):
     p = subprocess.Popen(cmd, stdout=subprocess.PIPE)
     launch_instance.i += 1
     return (p, cfg_path)
+
+
 launch_instance.i = 0
 
 
