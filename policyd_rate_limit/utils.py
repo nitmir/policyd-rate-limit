@@ -368,7 +368,7 @@ def send_report(cur):
             for (id, delta, hit) in report:
                 report_d[id].append((delta, hit))
                 max_d['id'] = max(max_d['id'], len(id))
-                max_d['delta'] = max(max_d['delta'], len(str(delta)))
+                max_d['delta'] = max(max_d['delta'], len(str(delta)) + 1)
                 max_d['hit'] = max(max_d['hit'], len(str(hit)))
             # sort by hits
             report.sort(key=lambda x: x[2])
