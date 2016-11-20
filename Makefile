@@ -9,7 +9,7 @@ install: dist
 	[ ! -f /etc/policyd-rate-limit.yaml ] && cp -n policyd_rate_limit/policyd-rate-limit.yaml /etc/ || true
 	cp -n init/policyd-rate-limit /etc/init.d
 	cp -n init/policyd-rate-limit.service /etc/systemd/system/ || true
-	pip3 install policyd-rate-limit -U --force-reinstall --no-deps --no-binary :all -f ./dist/policyd-rate-limit-${VERSION}.tar.gz
+	pip3 install policyd-rate-limit --no-cache-dir -U --force-reinstall --no-deps --no-binary :all -f ./dist/policyd-rate-limit-${VERSION}.tar.gz
 	systemctl daemon-reload
 uninstall:
 	pip3 uninstall policyd-rate-limit || true
