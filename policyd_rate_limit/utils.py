@@ -332,9 +332,13 @@ def clean():
         print("%d records deleted" % cur.rowcount)
         # if report is True, generate a mail report
         if config.report and config.report_to:
-            send_report(cur)
-            # The mail report has been successfully send, flush limit_report
-            cur.execute("DELETE FROM limit_report")
+            report_text = gen_report(cur)
+        # The mail report has been successfully send, flush limit_report
+        cur.execute("DELETE FROM limit_report")
+    # the send_report generate an sql mail_count insert which cause deadlock with the cursor() above, we move the send_report
+    # outside the with: statement to avoid the deadlock
+    if len(report_text) != 0:
+        send_report(report_text)
 
     try:
         if config.backend == PGSQL_DB:
@@ -354,11 +358,11 @@ def clean():
         if config.backend == PGSQL_DB:
             cursor.get_db().autocommit = False
 
-
-def send_report(cur):
+def gen_report(cur):
     cur.execute("SELECT id, delta, hit FROM limit_report")
     # list to sort ids by hits
     report = list(cur.fetchall())
+    text = []
     if not config.report_only_if_needed or report:
         if report:
             text = ["Below is the table of users who hit a limit since the last cleanup:", ""]
@@ -368,7 +372,7 @@ def send_report(cur):
             for (id, delta, hit) in report:
                 report_d[id].append((delta, hit))
                 max_d['id'] = max(max_d['id'], len(id))
-                max_d['delta'] = max(max_d['delta'], len(str(delta)) + 1)
+                max_d['delta'] = max(max_d['delta'], len(str(delta)))
                 max_d['hit'] = max(max_d['hit'], len(str(hit)))
             # sort by hits
             report.sort(key=lambda x: x[2])
@@ -404,6 +408,9 @@ def send_report(cur):
         else:
             text = ["No user hit a limit since the last cleanup"]
         text.extend(["", "-- ", "policyd-rate-limit"])
+    return text
+
+def send_report(text):
 
         # Start building the mail report
         msg = MIMEMultipart()
@@ -438,6 +445,7 @@ def send_report(cur):
                     ValueError("bad smtp_credentials should be a tuple (login, password)")
             server.sendmail(config.report_from or "", config.report_to, msg.as_string())
         finally:
+            print('report is sent')
             server.quit()
 
 
@@ -537,6 +545,5 @@ def exit_signal_handler(signal, frame):
     """SIGUSR1 signal handler. Cause the program to exit gracefully.
     Used for coverage computation"""
     raise Exit()
-
 
 config = LazyConfig()
