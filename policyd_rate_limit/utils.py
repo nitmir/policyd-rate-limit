@@ -335,8 +335,7 @@ def clean():
             report_text = gen_report(cur)
         # The mail report has been successfully send, flush limit_report
         cur.execute("DELETE FROM limit_report")
-    # the send_report generate an sql mail_count insert which cause deadlock with the cursor() above, we move the send_report
-    # outside the with: statement to avoid the deadlock
+    # send report
     if len(report_text) != 0:
         send_report(report_text)
 
@@ -357,6 +356,7 @@ def clean():
     finally:
         if config.backend == PGSQL_DB:
             cursor.get_db().autocommit = False
+
 
 def gen_report(cur):
     cur.execute("SELECT id, delta, hit FROM limit_report")
@@ -409,6 +409,7 @@ def gen_report(cur):
             text = ["No user hit a limit since the last cleanup"]
         text.extend(["", "-- ", "policyd-rate-limit"])
     return text
+
 
 def send_report(text):
 
