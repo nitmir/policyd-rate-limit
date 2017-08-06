@@ -49,11 +49,29 @@ database. It could be wise to put it in a daily cron, for example::
 
     0 0 * * * policyd-rate-limit /usr/local/bin/policyd-rate-limit --clean >/dev/null
 
+
+Options of the ``policyd-rate-limit`` binary
+--------------------------------------------
+
+* ``-h``, ``--help``: show the help message and exit
+* ``--clean``: clean old records from the database
+* ``--get-config PARAMETER_NAME`` return the value of a config parameter
+* ``--file CONFIG_PATH``, ``-f CONFIG_PATH``: path to a config file
+
 Settings
 --------
 
-``policyd-rate-limit`` search for its config first in ``~/.config/policyd-rate-limit.conf``
-If not found, then in ``/etc/policyd-rate-limit.conf``, and if not found use the default config.
+If the option ``--file`` is not specified, ``policyd-rate-limit`` try to read its configuration from
+the following path and choose the first existing file:
+
+* ~/.config/policyd-rate-limit.conf
+* ~/.config/policyd-rate-limit.yaml
+* /etc/policyd-rate-limit.conf
+* /etc/policyd-rate-limit.yaml
+
+The ``.conf`` are the old configuration format. It was a python module and should not be used.
+The ``.yaml`` are the new configuration format using the YAML syntax.
+
 
 * ``debug``: make ``policyd-rate-limit`` output logs to stderr.
   The default is ``True``.
