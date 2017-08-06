@@ -56,7 +56,10 @@ limits_by_id: {}
 
 # Apply limits by sasl usernames.
 limit_by_sasl: True
-# If no sasl username is found, apply limits by ip addresses.
+# If no sasl username is found, or limit by sasl usernames disabled,
+# apply limits by sender addresses.
+limit_by_sender: False
+# If sasl username and sender address not found or disabled, apply limits by ip addresses.
 limit_by_ip: False
 
 # A list of ip networks in cidr notation on which limits are applied. An empty list is equal

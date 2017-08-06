@@ -180,6 +180,9 @@ class Policyd(object):
                     # if user is authenticated, we filter by sasl username
                     if config.limit_by_sasl and u'sasl_username' in request:
                         id = request[u'sasl_username']
+                    # else, if activated, we filter by sender
+                    elif config.limit_by_sender and u'sender' in request:
+                        id = request[u'sender']
                     # else, if activated, we filter by ip source addresse
                     elif (
                         config.limit_by_ip and
@@ -191,7 +194,7 @@ class Policyd(object):
                     # to the next section
                     else:
                         raise Pass()
-                    # Here we are limiting agains sasl username or ip source addresses.
+                    # Here we are limiting against sasl username, sender or source ip addresses.
                     # for each limit periods, we count the number of mails already send.
                     # if the a limit is reach, we change action to fail (deny the mail).
                     for mail_nb, delta in config.limits_by_id.get(id, config.limits):

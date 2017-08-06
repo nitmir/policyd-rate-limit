@@ -53,6 +53,7 @@ limits = [
 limits_by_id = {}
 
 limit_by_sasl = True
+limit_by_sender = False
 limit_by_ip = False
 
 limited_networks = []
