@@ -405,13 +405,6 @@ def send_report(cur):
             text = ["No user hit a limit since the last cleanup"]
         text.extend(["", "-- ", "policyd-rate-limit"])
 
-        # Start building the mail report
-        msg = MIMEMultipart()
-        msg['Subject'] = config.report_subject or ""
-        msg['From'] = config.report_from or ""
-        msg['To'] = config.report_to
-        msg.attach(MIMEText("\n".join(text), 'plain'))
-
         # check that smtp_server is wekk formated
         if isinstance(config.smtp_server, (list, tuple)):
             if len(config.smtp_server) >= 2:
@@ -436,7 +429,19 @@ def send_report(cur):
                     server.login(config.smtp_credentials[0], config.smtp_credentials[1])
                 else:
                     ValueError("bad smtp_credentials should be a tuple (login, password)")
-            server.sendmail(config.report_from or "", config.report_to, msg.as_string())
+
+            if not isinstance(config.report_to, list):
+                report_to = [config.report_to]
+            else:
+                report_to = config.report_to
+            for rcpt in report_to:
+                # Start building the mail report
+                msg = MIMEMultipart()
+                msg['Subject'] = config.report_subject or ""
+                msg['From'] = config.report_from or ""
+                msg['To'] = rcpt
+                msg.attach(MIMEText("\n".join(text), 'plain'))
+                server.sendmail(config.report_from or "", rcpt, msg.as_string())
         finally:
             server.quit()
 

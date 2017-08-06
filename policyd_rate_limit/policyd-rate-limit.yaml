@@ -81,6 +81,12 @@ report: False
 # from who to send emails reports. Must be defined if report: True
 report_from: null
 # Address to send emails reports to. Must be defined if report: True
+# If can be a single email address:
+# report_to: foo@example.com
+# or a list of email addresses:
+# report_to:
+#     - foo@example.com
+#     - bar@example.com
 report_to: null
 # Subject of the report email
 report_subject: "policyd-rate-limit report"

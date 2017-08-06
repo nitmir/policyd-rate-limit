@@ -103,6 +103,7 @@ Settings
   From who to send emails reports. It must be defined when **report** is True.
 **report_to**
   Address to send emails reports to. It must be defined when **report** is True.
+  It can be a single email address or a list of email adresses.
 **report_subject**
   Subject of the report email. The default is "policyd-rate-limit report".
 **report_limits**

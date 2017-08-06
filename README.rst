@@ -104,6 +104,7 @@ If not found, then in ``/etc/policyd-rate-limit.conf``, and if not found use the
   --clean is called. The default is ``False``.
 * ``report_from``: From who to send emails reports. It must be defined when ``report`` is ``True``.
 * ``report_to``: Address to send emails reports to. It must be defined when ``report`` is ``True``.
+  It can be a single email address or a list of email adresses.
 * ``report_subject``: Subject of the report email. The default is ``"policyd-rate-limit report"``.
 * ``report_limits``: List of number of seconds from the limits list for which you want to be reported.
   The default is ``[86400]``.

@@ -69,7 +69,7 @@ db_error_action = "dunno"
 report = False
 # from who to send emails reports
 report_from = None
-# address to send emails reports to
+# address to send emails reports to. It can be a single email or a list of emails
 report_to = None
 # subject of the report email
 report_subject = "policyd-rate-limit report"
