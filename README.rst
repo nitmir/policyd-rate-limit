@@ -81,7 +81,9 @@ If not found, then in ``/etc/policyd-rate-limit.conf``, and if not found use the
   custom limits for a particular id. Use an empty list for no limits for a particular id.
   Ids are sasl usernames or ip addresses. The default is ``{}``.
 * ``limit_by_sasl``: Apply limits by sasl usernames. The default is ``True``.
-* ``limit_by_ip``: Apply limits by ip addresses if sasl username is not found.
+* ``limit_by_sender``: Apply limits by sender addresses if sasl username is not found.
+  The defaut is ``False``.
+* ``limit_by_ip``: Apply limits by ip addresses if sasl username and sender address are not found.
   The default is ``False``.
 * ``limited_networks``: A list of ip networks in cidr notation on which limits are applied. An empty
   list is equal to ``limit_by_ip = False``, put ``"0.0.0.0/0"`` and ``::/0`` for every ip addresses.

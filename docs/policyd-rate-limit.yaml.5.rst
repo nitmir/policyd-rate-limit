@@ -73,6 +73,8 @@ Settings
   ip addresses. The default is {}.
 **limit_by_sasl**
   Apply limits by sasl usernames. The default is True.
+**limit_by_sender**
+  Apply limits by sender addresses if sasl username is not found. The defaut is ``False``.
 **limit_by_ip**
   Apply limits by ip addresses if sasl username is not found. The default is False.
 **limited_networks**
