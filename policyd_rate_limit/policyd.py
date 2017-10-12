@@ -13,6 +13,7 @@ import sys
 import socket
 import time
 import select
+import traceback
 
 from policyd_rate_limit import utils
 from policyd_rate_limit.utils import config
@@ -158,7 +159,7 @@ class Policyd(object):
             self.close_connection(connection)
             raise
         except Exception as error:
-            sys.stderr.write("%s\n" % error)
+            traceback.print_exc()
             sys.stderr.flush()
             self.close_connection(connection)
 
