@@ -14,6 +14,7 @@ import socket
 import time
 import select
 import traceback
+import ast
 
 from policyd_rate_limit import utils
 from policyd_rate_limit.utils import config
@@ -195,10 +196,24 @@ class Policyd(object):
                     # to the next section
                     else:
                         raise Pass()
+
+                    #Custom limits per ID via MySQL
+                    custom_limits = config.limits_by_id
+                    if config.sql_limits_by_id != "":
+                        try:
+                            cur.execute(config.sql_limits_by_id, [id])
+                            custom_limits[id] = ast.literal_eval(cur.fetchone()[0])
+                        except TypeError:
+                            custom_limits = {}
+                            sys.stderr.write(u"There is no limit rate for: %s\n" % (id))
+                            sys.stderr.flush()
+                    sys.stderr.write(u"Custom limit(s): %s\n" % custom_limits)
+                    sys.stderr.flush()
+
                     # Here we are limiting against sasl username, sender or source ip addresses.
                     # for each limit periods, we count the number of mails already send.
                     # if the a limit is reach, we change action to fail (deny the mail).
-                    for mail_nb, delta in config.limits_by_id.get(id, config.limits):
+                    for mail_nb, delta in custom_limits.get(id, config.limits):
                         cur.execute(
                             (
                                 "SELECT COUNT(*) FROM mail_count "
@@ -236,3 +251,4 @@ class Policyd(object):
             sys.stderr.flush()
         # return the result to the client
         self.socket_data_write[connection] = data.encode('UTF-8')
+

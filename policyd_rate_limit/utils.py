@@ -453,13 +453,28 @@ def database_init():
       id varchar(40) NOT NULL,
       date bigint NOT NULL
     );"""
+        if config.sql_limits_by_id != "":
+                if config.backend == MYSQL_DB:
+                        query_limits = """CREATE TABLE IF NOT EXISTS rate_limits (
+                          id int NOT NULL AUTO_INCREMENT,
+                          limits varchar(255) NOT NULL,
+                          PRIMARY KEY (id)
+                        );"""
+        if config.sql_limits_by_id != "":
+                if config.backend == PGSQL_DB:
+                        query_limits = """CREATE TABLE IF NOT EXISTS rate_limits (
+                          id int NOT NULL,
+                          limits varchar(255) NOT NULL,
+                          PRIMARY KEY (id)
+                        );"""
+
         # if report is enable, also create the table for storing report datas
         if config.report:
             query_report = """CREATE TABLE IF NOT EXISTS limit_report (
-      id varchar(40) NOT NULL,
-      delta int NOT NULL,
-      hit int NOT NULL DEFAULT 0
-    );"""
+              id varchar(40) NOT NULL,
+              delta int NOT NULL,
+              hit int NOT NULL DEFAULT 0
+            );"""
         try:
             if cursor.backend == MYSQL_DB:
                 # ignore possible warnings about the table already existing
@@ -467,6 +482,9 @@ def database_init():
             cur.execute(query)
             if config.report:
                 cur.execute(query_report)
+            if config.sql_limits_by_id != "" and (config.backend == MYSQL_DB or config.backend == PGSQL_DB):
+                cur.execute(query_limits)
+
         finally:
             warnings.resetwarnings()
         try:
