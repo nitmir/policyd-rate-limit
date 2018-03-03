@@ -332,9 +332,12 @@ def clean():
         print("%d records deleted" % cur.rowcount)
         # if report is True, generate a mail report
         if config.report and config.report_to:
-            send_report(cur)
-            # The mail report has been successfully send, flush limit_report
-            cur.execute("DELETE FROM limit_report")
+            report_text = gen_report(cur)
+        # The mail report has been successfully send, flush limit_report
+        cur.execute("DELETE FROM limit_report")
+    # send report
+    if len(report_text) != 0:
+        send_report(report_text)
 
     try:
         if config.backend == PGSQL_DB:
@@ -355,10 +358,11 @@ def clean():
             cursor.get_db().autocommit = False
 
 
-def send_report(cur):
+def gen_report(cur):
     cur.execute("SELECT id, delta, hit FROM limit_report")
     # list to sort ids by hits
     report = list(cur.fetchall())
+    text = []
     if not config.report_only_if_needed or report:
         if report:
             text = ["Below is the table of users who hit a limit since the last cleanup:", ""]
@@ -404,6 +408,10 @@ def send_report(cur):
         else:
             text = ["No user hit a limit since the last cleanup"]
         text.extend(["", "-- ", "policyd-rate-limit"])
+    return text
+
+
+def send_report(text):
 
         # check that smtp_server is wekk formated
         if isinstance(config.smtp_server, (list, tuple)):
@@ -443,6 +451,7 @@ def send_report(cur):
                 msg.attach(MIMEText("\n".join(text), 'plain'))
                 server.sendmail(config.report_from or "", rcpt, msg.as_string())
         finally:
+            print('report is sent')
             server.quit()
 
 
