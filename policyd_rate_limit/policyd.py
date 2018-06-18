@@ -204,9 +204,9 @@ class Policyd(object):
                             cur.execute(config.sql_limits_by_id, [id])
                             custom_limits[id] = ast.literal_eval(cur.fetchone()[0])
                         except TypeError:
-                            custom_limits = {}
+                            custom_limits = config.limits_by_id
                             if config.debug:
-                                sys.stderr.write(u"There is no limit rate for: %s\n" % (id))
+                                sys.stderr.write(u"There is no limit rate in SQL for: %s\n" % (id))
                                 sys.stderr.flush()
                     if config.debug:
                         sys.stderr.write(u"Custom limit(s): %s\n" % custom_limits)
