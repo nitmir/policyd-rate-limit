@@ -205,10 +205,12 @@ class Policyd(object):
                             custom_limits[id] = ast.literal_eval(cur.fetchone()[0])
                         except TypeError:
                             custom_limits = {}
-                            sys.stderr.write(u"There is no limit rate for: %s\n" % (id))
-                            sys.stderr.flush()
-                    sys.stderr.write(u"Custom limit(s): %s\n" % custom_limits)
-                    sys.stderr.flush()
+                            if config.debug:
+                                sys.stderr.write(u"There is no limit rate for: %s\n" % (id))
+                                sys.stderr.flush()
+                    if config.debug:
+                        sys.stderr.write(u"Custom limit(s): %s\n" % custom_limits)
+                        sys.stderr.flush()
 
                     # Here we are limiting against sasl username, sender or source ip addresses.
                     # for each limit periods, we count the number of mails already send.
