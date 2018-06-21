@@ -198,6 +198,7 @@ class Policyd(object):
                         raise Pass()
 
                     #Custom limits per ID via MySQL
+                    del custom_limits[:]
                     custom_limits = config.limits_by_id
                     if config.sql_limits_by_id != "":
                         try:
