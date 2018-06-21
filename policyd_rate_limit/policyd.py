@@ -200,8 +200,6 @@ class Policyd(object):
                     #Custom limits per ID via MySQL
 
                     custom_limits = config.limits_by_id
-                    del custom_limits[:]
-                    custom_limits = config.limits_by_id
                     if config.sql_limits_by_id != "":
                         try:
                             cur.execute(config.sql_limits_by_id, [id])
