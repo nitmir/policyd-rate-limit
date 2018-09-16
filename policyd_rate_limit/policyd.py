@@ -141,8 +141,7 @@ class Policyd(object):
                         self.close_connection(socket)
                         __to_rm.append(socket)
                 for socket in __to_rm:
-                    _ = self.last_used.pop(socket)
-
+                    self.last_used.pop(socket)
 
         except (KeyboardInterrupt, utils.Exit):
             for socket in list(self.socket_data_read.keys()):
