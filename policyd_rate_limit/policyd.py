@@ -27,6 +27,7 @@ class Policyd(object):
     """The policy server class"""
     socket_data_read = {}
     socket_data_write = {}
+    last_used = {}
 
     def socket(self):
         """initialize the socket from the config parameters"""
@@ -72,6 +73,19 @@ class Policyd(object):
             pass
         connection.close()
 
+    def close_write_conn(self, connection):
+        """Removes a socket from the write dict"""
+        try:
+            del self.socket_data_write[connection]
+        except KeyError:
+            if config.debug:
+                sys.stderr.write(
+                    (
+                        "Hmmm, a socket actually used to write a little "
+                        "time ago wasn\'t in socket_data_write. Weird.\n"
+                    )
+                )
+
     def run(self):
         """The main server loop"""
         try:
@@ -97,6 +111,9 @@ class Policyd(object):
                             sys.stderr.write('connection from %s\n' % (client_address,))
                             sys.stderr.flush()
                         self.socket_data_read[connection] = []
+
+                        # Updates the last_sed time for the socket.
+                        self.last_used[connection] = time.time()
                     # else there is data to read on a client socket
                     else:
                         self.read(socket)
@@ -108,10 +125,25 @@ class Policyd(object):
                         if data_not_sent:
                             self.socket_data_write[socket] = data_not_sent
                         else:
-                            self.close_connection(socket)
+                            self.close_write_conn(socket)
+
+                        # Socket has been used, let's update its last_used time.
+                        self.last_used[socket] = time.time()
                     # the socket has been closed during read
                     except KeyError:
                         pass
+                # Closes unused socket for a long time.
+                __to_rm = []
+                for (socket, last_used) in self.last_used.items():
+                    if socket == sock:
+                        continue
+                    if time.time() - last_used > config.delay_to_close:
+                        self.close_connection(socket)
+                        __to_rm.append(socket)
+                for socket in __to_rm:
+                    _ = self.last_used.pop(socket)
+
+
         except (KeyboardInterrupt, utils.Exit):
             for socket in list(self.socket_data_read.keys()):
                 if socket != self.sock:
@@ -155,6 +187,8 @@ class Policyd(object):
                 self.action(connection, request)
             else:
                 self.socket_data_read[connection] = buffer
+            # Socket has been used, let's update its last_used time.
+            self.last_used[connection] = time.time()
         except (KeyboardInterrupt, utils.Exit):
             self.close_connection(connection)
             raise
@@ -236,3 +270,5 @@ class Policyd(object):
             sys.stderr.flush()
         # return the result to the client
         self.socket_data_write[connection] = data.encode('UTF-8')
+        # Socket has been used, let's update its last_used time.
+        self.last_used[connection] = time.time()
