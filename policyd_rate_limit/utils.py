@@ -268,7 +268,7 @@ class _cursor(object):
     def del_db(cls):
         try:
             cls._db[threading.current_thread()].close()
-        except:
+        except Exception as e:
             pass
         try:
             del cls._db[threading.current_thread()]
