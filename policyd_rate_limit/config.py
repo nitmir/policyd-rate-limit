@@ -84,3 +84,6 @@ smtp_server = ("localhost", 25)
 smtp_starttls = False
 # Should we use credentials to connect to smtp_server ? if yes set ("user", "password"), else None
 smtp_credentials = None
+
+# The time in seconds before an unused socket gets closed
+delay_to_close = 300
