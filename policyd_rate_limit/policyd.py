@@ -23,6 +23,14 @@ class Pass(Exception):
     pass
 
 
+class PolicydError(Exception):
+    pass
+
+
+class PolicydConnectionClosed(PolicydError):
+    pass
+
+
 class Policyd(object):
     """The policy server class"""
     socket_data_read = {}
@@ -157,7 +165,7 @@ class Policyd(object):
             # read data
             data = connection.recv(1024).decode('UTF-8')
             if not data:
-                raise ValueError("connection closed")
+                raise PolicydConnectionClosed()
             if config.debug:
                 sys.stderr.write(data)
                 sys.stderr.flush()
@@ -191,7 +199,12 @@ class Policyd(object):
         except (KeyboardInterrupt, utils.Exit):
             self.close_connection(connection)
             raise
-        except Exception as error:
+        except PolicydConnectionClosed:
+            if config.debug:
+                sys.stderr.write("Connection closed\n")
+                sys.stderr.flush()
+            self.close_connection(connection)
+        except Exception:
             traceback.print_exc()
             sys.stderr.flush()
             self.close_connection(connection)
