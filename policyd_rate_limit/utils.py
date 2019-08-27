@@ -327,6 +327,7 @@ def clean():
         max_delta = max(max_delta, delta)
     # remove old record older than 2*max_delta
     expired = int(time.time() - max_delta - max_delta)
+    report_text = ""
     with cursor() as cur:
         cur.execute("DELETE FROM mail_count WHERE date <= %s" % config.format_str, (expired,))
         print("%d records deleted" % cur.rowcount)
