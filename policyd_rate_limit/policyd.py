@@ -282,5 +282,7 @@ class Policyd(object):
             sys.stderr.flush()
         # return the result to the client
         self.socket_data_write[connection] = data.encode('UTF-8')
+        # Wipe the read buffer (otherwise it'll be added up for eternity)
+        self.socket_data_read[connection].clear()
         # Socket has been used, let's update its last_used time.
         self.last_used[connection] = time.time()
