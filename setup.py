@@ -37,7 +37,7 @@ else:
 
 setup(
     name='policyd-rate-limit',
-    version='1.0.1',
+    version='1.0.1.1',
     description=DESC,
     long_description=README,
     author='Valentin Samir',
