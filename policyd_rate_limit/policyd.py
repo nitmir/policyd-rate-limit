@@ -244,7 +244,13 @@ class Policyd(object):
                     # Here we are limiting against sasl username, sender or source ip addresses.
                     # for each limit periods, we count the number of mails already send.
                     # if the a limit is reach, we change action to fail (deny the mail).
-                    for mail_nb, delta in config.limits_by_id.get(id, config.limits):
+                    # if id is an email adderess
+                    if '@' in id:
+                        # try to get limits for domain if no limits for address
+                        limits = config.limits_by_id.get(id, config.limits_by_id.get(id.split('@')[1], config.limits))
+                    else:
+                        limits = config.limits_by_id.get(id, config.limits)
+                    for mail_nb, delta in limits:
                         cur.execute(
                             (
                                 "SELECT COUNT(*) FROM mail_count "
