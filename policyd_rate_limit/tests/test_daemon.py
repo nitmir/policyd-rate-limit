@@ -41,12 +41,12 @@ class DaemonTestCase(TestCase):
             self.base_test(cfg)
 
     def test_main_afinet_socket(self):
-        self.base_config["SOCKET"] = ("127.0.0.1", 27184)
+        self.base_config["SOCKET"] = ["127.0.0.1", 27184]
         with test_utils.lauch(self.base_config) as cfg:
             self.base_test(cfg)
 
     def test_main_afinet6_socket(self):
-        self.base_config["SOCKET"] = ("::1", 27184)
+        self.base_config["SOCKET"] = ["::1", 27184]
         with test_utils.lauch(self.base_config) as cfg:
             self.base_test(cfg)
 
@@ -174,10 +174,10 @@ class DaemonTestCase(TestCase):
                 pass
 
     def test_bad_socket_bind_address(self):
-        self.base_config["SOCKET"] = ("toto", 1234)
+        self.base_config["SOCKET"] = ["toto", 1234]
         with test_utils.lauch(self.base_config, get_process=True, no_wait=True) as p:
             self.assertEqual(p.wait(), 4)
-        self.base_config["SOCKET"] = ("192.168::1", 1234)
+        self.base_config["SOCKET"] = ["192.168::1", 1234]
         with test_utils.lauch(self.base_config, get_process=True, no_wait=True) as p:
             self.assertEqual(p.wait(), 6)
 

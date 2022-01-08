@@ -58,6 +58,8 @@ def postfix_request(sasl_username="", client_address="127.0.0.1", protocol_state
 
 @contextmanager
 def sock(addr):
+    if isinstance(addr, list):
+        addr = tuple(addr)
     if isinstance(addr, str):
         s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     elif '.' in addr[0]:
@@ -92,7 +94,7 @@ def gen_config(new_config):
         os.path.join(os.path.dirname(__file__), '..', 'policyd-rate-limit.yaml')
     )
     with open(default_config) as f:
-        config = yaml.load(f)
+        config = yaml.load(f, Loader=yaml.SafeLoader)
     config.update(new_config)
     cfg_path = tempfile.mktemp('.yaml')
     with open(cfg_path, 'w') as f:
@@ -156,7 +158,7 @@ def lauch(new_config, get_process=False, options=None, no_coverage=False, no_wai
     try:
         if cfg_path:
             with open(cfg_path) as f:
-                cfg = yaml.load(f)
+                cfg = yaml.load(f, Loader=yaml.SafeLoader)
             if not no_wait:
                 time.sleep(0.01)
                 for i in range(100):

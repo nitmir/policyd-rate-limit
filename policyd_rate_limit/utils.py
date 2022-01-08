@@ -85,7 +85,7 @@ class Config(object):
                     # new config file use yaml
                     else:
                         with open(config_file) as f:
-                            self._config = yaml.load(f)
+                            self._config = yaml.load(f, Loader=yaml.SafeLoader)
                     self.config_file = config_file
                     break
                 except PermissionError:
