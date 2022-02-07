@@ -328,7 +328,11 @@ def clean():
     # remove old record older than 2*max_delta
     expired = int(time.time() - max_delta - max_delta)
     report_text = ""
+    report_totals_text = ""
     with cursor() as cur:
+        # if report_totals is True, generate report before deleting table contents.
+        if config.report_totals and config.report_to:
+            report_totals_text = gen_totals_report(cur)
         cur.execute("DELETE FROM mail_count WHERE date <= %s" % config.format_str, (expired,))
         print("%d records deleted" % cur.rowcount)
         # if report is True, generate a mail report
@@ -336,9 +340,11 @@ def clean():
             report_text = gen_report(cur)
         # The mail report has been successfully send, flush limit_report
         cur.execute("DELETE FROM limit_report")
-    # send report
+    # send reports
     if len(report_text) != 0:
         send_report(report_text)
+    if len(report_totals_text) != 0:
+        send_report(report_totals_text)
 
     try:
         if config.backend == PGSQL_DB:
@@ -392,6 +398,35 @@ def gen_report(cur):
         else:
             text = ["No user hit a limit since the last cleanup"]
         text.append("</table> <br /> -- policyd-rate-limit")
+    return text
+
+
+def gen_totals_report(cur):
+    cur.execute("SELECT id, date FROM mail_count")
+    # list to sort ids by hits
+    report = list(cur.fetchall())
+    text = []
+    if report:
+        text = ["<strong>Total quantity of emails sent since the last cleanup:</strong><br /><br />", ""]
+        # dist to groups deltas by ids
+        report_d = collections.defaultdict()
+        for (id, date ) in report:
+            if id in report_d.keys():
+                report_d[id] += 1
+            else:
+                report_d[id] = 1
+
+        # table header
+        text.append("<table><tr>")
+        text.append("<th>User/IP</th>")
+        text.append("<th>Count</th>")
+        text.append("</tr>")
+
+        for (id, count) in report_d.items():
+            # add a table row
+            text.append( "<tr><td>" + str(id) + "</td>")
+            text.append( "<td>" + str(count) + "</td></tr>")
+    text.append("</table> <br /> -- policyd-rate-limit")
     return text
 
 
