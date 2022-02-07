@@ -61,6 +61,8 @@ limit_by_sasl: True
 limit_by_sender: False
 # If sasl username and sender address not found or disabled, apply limits by ip addresses.
 limit_by_ip: False
+# If enabled, filters based on recipient address
+limit_by_recipient: False
 
 # A list of ip networks in cidr notation on which limits are applied. An empty list is equal
 # to limit_by_ip: False, put "0.0.0.0/0" and "::/0" for every ip addresses.

@@ -230,6 +230,9 @@ class Policyd(object):
                     # else, if activated, we filter by sender
                     elif config.limit_by_sender and u'sender' in request:
                         id = request[u'sender']
+                    # else, if activated, we filter by recipient
+                    elif config.limit_by_recipient and u'recipient' in request:
+                        id = request[u'recipient']
                     # else, if activated, we filter by ip source addresse
                     elif (
                         config.limit_by_ip and
