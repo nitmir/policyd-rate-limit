@@ -366,94 +366,77 @@ def gen_report(cur):
     text = []
     if not config.report_only_if_needed or report:
         if report:
-            text = ["Below is the table of users who hit a limit since the last cleanup:", ""]
+            text = ["<strong>Below is the table of users who hit a limit since the last cleanup:</strong><br /><br />", ""]
             # dist to groups deltas by ids
             report_d = collections.defaultdict(list)
-            max_d = {'id': 2, 'delta': 5, 'hit': 3}
             for (id, delta, hit) in report:
                 report_d[id].append((delta, hit))
-                max_d['id'] = max(max_d['id'], len(id))
-                max_d['delta'] = max(max_d['delta'], len(str(delta)) + 1)
-                max_d['hit'] = max(max_d['hit'], len(str(hit)))
+
             # sort by hits
             report.sort(key=lambda x: x[2])
             # table header
-            text.append(
-                "|%s|%s|%s|" % (
-                    print_fw("id", max_d['id']),
-                    print_fw("delta", max_d['delta']),
-                    print_fw("hit", max_d['hit'])
-                )
-            )
-            # table header/data separation
-            text.append(
-                "|%s+%s+%s|" % (
-                    print_fw("", max_d['id'], filler='-'),
-                    print_fw("", max_d['delta'], filler='-'),
-                    print_fw("", max_d['hit'], filler='-')
-                )
-            )
+            text.append("<table><tr>")
+            text.append("<th>ID</th>")
+            text.append("<th>Delta</th>")
+            text.append("<th>Hit</th>")
+            text.append("</tr>")
 
             for (id, _, _) in report:
                 # sort by delta
                 report_d[id].sort()
                 for (delta, hit) in report_d[id]:
                     # add a table row
-                    text.append(
-                        "|%s|%s|%s|" % (
-                            print_fw(id, max_d['id'], align_left=False),
-                            print_fw("%ss" % delta, max_d['delta'], align_left=False),
-                            print_fw(hit, max_d['hit'], align_left=False)
-                        )
-                    )
+                    text.append("<tr><td>" + str(id) + "</td>")
+                    text.append("<td>" + str(delta) + "s</td>")
+                    text.append("<td>" + str(hit) + "</td></tr>")
         else:
             text = ["No user hit a limit since the last cleanup"]
-        text.extend(["", "-- ", "policyd-rate-limit"])
+        text.append("</table> <br /> -- policyd-rate-limit")
     return text
 
 
 def send_report(text):
 
-        # check that smtp_server is wekk formated
-        if isinstance(config.smtp_server, (list, tuple)):
-            if len(config.smtp_server) >= 2:
-                server = smtplib.SMTP(config.smtp_server[0], config.smtp_server[1])
-            elif len(config.smtp_server) == 1:
-                server = smtplib.SMTP(config.smtp_server[0], 25)
-            else:
-                raise ValueError("bad smtp_server should be a tuple (server_adress, port)")
+    # check that smtp_server is well formatted
+    if isinstance(config.smtp_server, (list, tuple)):
+        if len(config.smtp_server) >= 2:
+            server = smtplib.SMTP(config.smtp_server[0], config.smtp_server[1])
+        elif len(config.smtp_server) == 1:
+            server = smtplib.SMTP(config.smtp_server[0], 25)
         else:
             raise ValueError("bad smtp_server should be a tuple (server_adress, port)")
+    else:
+        raise ValueError("bad smtp_server should be a tuple (server_adress, port)")
 
-        try:
-            # should we use starttls ?
-            if config.smtp_starttls:
-                server.starttls()
-            # should we use credentials ?
-            if config.smtp_credentials:
-                if (
-                    isinstance(config.smtp_credentials, (list, tuple)) and
-                    len(config.smtp_credentials) >= 2
-                ):
-                    server.login(config.smtp_credentials[0], config.smtp_credentials[1])
-                else:
-                    ValueError("bad smtp_credentials should be a tuple (login, password)")
-
-            if not isinstance(config.report_to, list):
-                report_to = [config.report_to]
+    try:
+        # should we use starttls ?
+        if config.smtp_starttls:
+            server.starttls()
+        # should we use credentials ?
+        if config.smtp_credentials:
+            if (
+                isinstance(config.smtp_credentials, (list, tuple)) and
+                len(config.smtp_credentials) >= 2
+            ):
+                server.login(config.smtp_credentials[0], config.smtp_credentials[1])
             else:
-                report_to = config.report_to
-            for rcpt in report_to:
-                # Start building the mail report
-                msg = MIMEMultipart()
-                msg['Subject'] = config.report_subject or ""
-                msg['From'] = config.report_from or ""
-                msg['To'] = rcpt
-                msg.attach(MIMEText("\n".join(text), 'plain'))
-                server.sendmail(config.report_from or "", rcpt, msg.as_string())
-        finally:
-            print('report is sent')
-            server.quit()
+                ValueError("bad smtp_credentials should be a tuple (login, password)")
+
+        if not isinstance(config.report_to, list):
+            report_to = [config.report_to]
+        else:
+            report_to = config.report_to
+        for rcpt in report_to:
+            # Start building the mail report
+            msg = MIMEMultipart()
+            msg['Subject'] = config.report_subject or ""
+            msg['From'] = config.report_from or ""
+            msg['To'] = rcpt
+            msg.attach(MIMEText("\n".join(text), 'html'))
+            server.sendmail(config.report_from or "", rcpt, msg.as_string())
+    finally:
+        print('report is sent')
+        server.quit()
 
 
 def database_init():
