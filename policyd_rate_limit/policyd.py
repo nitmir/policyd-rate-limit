@@ -259,6 +259,11 @@ class Policyd(object):
                         if config.debug:
                             sys.stderr.write("%03d/%03d hit since %ss\n" % (nb, mail_nb, delta))
                             sys.stderr.flush()
+                        print("nb " + str(nb))
+                        print(str(mail_nb))
+                        if nb >= mail_nb - mail_nb * .1:
+                            utils.send_warning_report(id, nb)
+                            raise Pass()
                         if nb >= mail_nb:
                             action = config.fail_action
                             if config.report and delta in config.report_limits:
