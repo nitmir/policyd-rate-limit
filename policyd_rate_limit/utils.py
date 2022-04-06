@@ -430,7 +430,86 @@ def gen_totals_report(cur):
     return text
 
 
-def send_report(text):
+def warn():
+    with cursor() as cur:
+        if config.report:
+            report_recipients = gen_warning_report(cur)
+    # send reports
+    if report_recipients:
+        for (rec, data) in report_recipients.items():
+            send_report(data, rec)
+
+    try:
+        if config.backend == PGSQL_DB:
+            # setting autocommit to True disable the transations. This is needed to run VACUUM
+            cursor.get_db().autocommit = True
+        with cursor() as cur:
+            if config.backend == PGSQL_DB:
+                cur.execute("VACUUM ANALYZE")
+            elif config.backend == SQLITE_DB:
+                cur.execute("VACUUM")
+            elif config.backend == MYSQL_DB:
+                if config.report:
+                    cur.execute("OPTIMIZE TABLE mail_count, limit_report")
+                else:
+                    cur.execute("OPTIMIZE TABLE mail_count")
+    finally:
+        if config.backend == PGSQL_DB:
+            cursor.get_db().autocommit = False
+
+
+def gen_warning_report(cur):
+    cur.execute("SELECT id, date FROM mail_count")
+    # list to sort ids by hits
+    report = list(cur.fetchall())
+    emailRec = collections.defaultdict()
+
+    if report:
+        # dist to groups deltas by ids
+        report_d = collections.defaultdict()
+        for (id, date) in report:
+            if id in report_d.keys():
+                report_d[id] += 1
+            else:
+                report_d[id] = 1
+
+        for (id, count) in report_d.items():
+            text = []
+            name = str(id)
+            alert_level = 0
+
+            for limit, time_period in config.limits_by_id.get(u'recipient', config.limits):
+                msg = ""
+                msg2 = ""
+                if count >= limit * .9:
+                    msg = "<br />You are currently over 90% of the"
+                elif count >= limit * .75:
+                    msg = "<br />You are currently over 75% of the"
+                elif count >= limit * .5:
+                    msg = "<br />You are currently over 50% of the"
+
+                if time_period >= 86400:
+                    msg2 = " allowed email limit in a " + str(time_period / 86400) + " day period"
+                elif time_period >= 3600:
+                    msg2 = " allowed email limit in a " + str(time_period / 3600) + " hour period."
+                elif time_period >= 60:
+                    msg2 = " allowed email limit in a " + str(time_period / 60) + " minute period."
+                else:
+                    msg2 = " allowed email limit in a " + str(time_period) + " second period."
+
+                msg3 = "<br />Total emails sent: " + str(count) + "/" + str(limit) + "<br />"
+
+                if msg != "" and msg2 != "" and limit > alert_level:
+                    text.append(name)
+                    text.append(msg+msg2)
+                    text.append(msg3)
+                    emailRec[name] = text
+                    alert_level = limit
+
+    return emailRec
+
+
+def send_report(text, extraTo=""):
 
     # check that smtp_server is well formatted
     if isinstance(config.smtp_server, (list, tuple)):
@@ -461,6 +540,11 @@ def send_report(text):
             report_to = [config.report_to]
         else:
             report_to = config.report_to
+
+        if extraTo != "":
+            report_to.append(extraTo)
+            print("Extra to " + str(extraTo))
+
         for rcpt in report_to:
             # Start building the mail report
             msg = MIMEMultipart()
