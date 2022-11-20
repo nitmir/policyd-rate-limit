@@ -413,47 +413,46 @@ def gen_report(cur):
 
 
 def send_report(text):
-
-        # check that smtp_server is wekk formated
-        if isinstance(config.smtp_server, (list, tuple)):
-            if len(config.smtp_server) >= 2:
-                server = smtplib.SMTP(config.smtp_server[0], config.smtp_server[1])
-            elif len(config.smtp_server) == 1:
-                server = smtplib.SMTP(config.smtp_server[0], 25)
-            else:
-                raise ValueError("bad smtp_server should be a tuple (server_adress, port)")
+    # check that smtp_server is wekk formated
+    if isinstance(config.smtp_server, (list, tuple)):
+        if len(config.smtp_server) >= 2:
+            server = smtplib.SMTP(config.smtp_server[0], config.smtp_server[1])
+        elif len(config.smtp_server) == 1:
+            server = smtplib.SMTP(config.smtp_server[0], 25)
         else:
             raise ValueError("bad smtp_server should be a tuple (server_adress, port)")
+    else:
+        raise ValueError("bad smtp_server should be a tuple (server_adress, port)")
 
-        try:
-            # should we use starttls ?
-            if config.smtp_starttls:
-                server.starttls()
-            # should we use credentials ?
-            if config.smtp_credentials:
-                if (
-                    isinstance(config.smtp_credentials, (list, tuple)) and
-                    len(config.smtp_credentials) >= 2
-                ):
-                    server.login(config.smtp_credentials[0], config.smtp_credentials[1])
-                else:
-                    ValueError("bad smtp_credentials should be a tuple (login, password)")
-
-            if not isinstance(config.report_to, list):
-                report_to = [config.report_to]
+    try:
+        # should we use starttls ?
+        if config.smtp_starttls:
+            server.starttls()
+        # should we use credentials ?
+        if config.smtp_credentials:
+            if (
+                isinstance(config.smtp_credentials, (list, tuple)) and
+                len(config.smtp_credentials) >= 2
+            ):
+                server.login(config.smtp_credentials[0], config.smtp_credentials[1])
             else:
-                report_to = config.report_to
-            for rcpt in report_to:
-                # Start building the mail report
-                msg = MIMEMultipart()
-                msg['Subject'] = config.report_subject or ""
-                msg['From'] = config.report_from or ""
-                msg['To'] = rcpt
-                msg.attach(MIMEText("\n".join(text), 'plain'))
-                server.sendmail(config.report_from or "", rcpt, msg.as_string())
-        finally:
-            print('report is sent')
-            server.quit()
+                ValueError("bad smtp_credentials should be a tuple (login, password)")
+
+        if not isinstance(config.report_to, list):
+            report_to = [config.report_to]
+        else:
+            report_to = config.report_to
+        for rcpt in report_to:
+            # Start building the mail report
+            msg = MIMEMultipart()
+            msg['Subject'] = config.report_subject or ""
+            msg['From'] = config.report_from or ""
+            msg['To'] = rcpt
+            msg.attach(MIMEText("\n".join(text), 'plain'))
+            server.sendmail(config.report_from or "", rcpt, msg.as_string())
+    finally:
+        print('report is sent')
+        server.quit()
 
 
 def database_init():
@@ -461,15 +460,51 @@ def database_init():
     with cursor() as cur:
         query = """CREATE TABLE IF NOT EXISTS mail_count (
       id varchar(40) NOT NULL,
-      date bigint NOT NULL
+      date bigint NOT NULL,
+      recipient_count int DEFAULT 1,
+      instance varchar(40) NOT NULL,
+      protocol_state varchar(10) NOT NULL
     );"""
         # if report is enable, also create the table for storing report datas
-        if config.report:
-            query_report = """CREATE TABLE IF NOT EXISTS limit_report (
+        query_report = """CREATE TABLE IF NOT EXISTS limit_report (
       id varchar(40) NOT NULL,
       delta int NOT NULL,
       hit int NOT NULL DEFAULT 0
     );"""
+        # Test the table version
+        try:
+            cur.execute("SELECT recipient_count FROM mail_count")
+        except cursor.backend_module.Error as error:
+            # If the table mail_count exists but the new column
+            # recipient_count does not, drop the table (it only
+            # contains temporary data). It will be recreated below.
+            if (
+                    (cursor.backend == MYSQL_DB and error.args[0] == 1054) or
+                    (
+                            cursor.backend == SQLITE_DB and
+                            error.args[0] == 'no such column: recipient_count'
+                    ) or
+                    (
+                            cursor.backend == PGSQL_DB and
+                            isinstance(error, cursor.backend_module.errors.UndefinedColumn)
+                    )
+
+            ):
+                cursor.get_db().commit()
+                cur.execute("DROP TABLE mail_count")
+            # Mysql table 'mail_count' doesn't exist
+            elif cursor.backend == MYSQL_DB and error.args[0] == 1146:
+                cursor.get_db().commit()
+            elif cursor.backend == SQLITE_DB and error.args[0] == 'no such table: mail_count':
+                cursor.get_db().commit()
+            elif (
+                    cursor.backend == PGSQL_DB and
+                    isinstance(error, cursor.backend_module.errors.UndefinedTable)
+            ):
+                cursor.get_db().commit()
+            else:
+                raise
+        # Create the table if needed
         try:
             if cursor.backend == MYSQL_DB:
                 # ignore possible warnings about the table already existing

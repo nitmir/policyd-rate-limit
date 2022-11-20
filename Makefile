@@ -9,14 +9,19 @@ install: dist
 	[ ! -f /etc/policyd-rate-limit.yaml ] && cp -n policyd_rate_limit/policyd-rate-limit.yaml /etc/ || true
 	cp -n init/policyd-rate-limit /etc/init.d
 	cp -n init/policyd-rate-limit.service /etc/systemd/system/ || true
+	cp -n init/policyd-rate-limit-clean.service /etc/systemd/system/policyd-rate-limit-clean.service
+	cp -n init/policyd-rate-limit-clean.timer /etc/systemd/system/policyd-rate-limit-clean.timer
 	pip3 install policyd-rate-limit --no-cache-dir -U --force-reinstall --no-deps --no-binary :all -f ./dist/policyd-rate-limit-${VERSION}.tar.gz
 	systemctl daemon-reload
+	systemctl enable policyd-rate-limit-clean.timer
+	systemctl start policyd-rate-limit-clean.timer
 uninstall:
 	pip3 uninstall policyd-rate-limit || true
 reinstall: uninstall install
 purge: uninstall
 	rm -f /etc/policyd-rate-limit.conf /etc/policyd-rate-limit.yaml
 	rm -f /etc/init.d/policyd-rate-limit /etc/systemd/system/policyd-rate-limit.service
+	rm -f /etc/systemd/system/policyd-rate-limit-clean.service /etc/systemd/system/policyd-rate-limit-clean.timer
 	rm -rf /var/lib/policyd-rate-limit/
 
 clean_pyc:
