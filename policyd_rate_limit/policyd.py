@@ -288,7 +288,7 @@ class Policyd(object):
                     elif request['protocol_state'].upper() == "DATA":
                         recipient_count = max(int(request["recipient_count"]), 1)
 
-                    #Custom limits per ID via SQL
+                    # Custom limits per ID via SQL
                     custom_limits = config.limits_by_id
                     if config.sql_limits_by_id != "":
                         try:
