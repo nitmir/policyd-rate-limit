@@ -14,6 +14,7 @@ import socket
 import time
 import select
 import traceback
+import ast
 
 from policyd_rate_limit import utils
 from policyd_rate_limit.utils import config
@@ -36,6 +37,7 @@ class Policyd(object):
     socket_data_read = {}
     socket_data_write = {}
     last_used = {}
+    last_deprecation_warning = 0
 
     def socket(self):
         """initialize the socket from the config parameters"""
@@ -219,11 +221,50 @@ class Policyd(object):
                 utils.database_init()
             with utils.cursor() as cur:
                 try:
-                    # only care if the protocol states is RCTP. If the policy delegation in postfix
+                    # only care if the protocol states is RCTP or DATA.
+                    # If the policy delegation in postfix
                     # configuration is in smtpd_recipient_restrictions as said in the doc,
                     # possible states are RCPT and VRFY.
-                    if 'protocol_state' in request and request['protocol_state'].upper() != "RCPT":
+                    # If in smtpd_data_restrictions only DATA is possible.
+                    if 'protocol_state' not in request:
+                        sys.stderr.write("Attribute 'protocol_state' not defined\n")
+                        sys.stderr.flush()
                         raise Pass()
+                    if config.count_mode not in {0, 1}:
+                        sys.stderr.write("Settings 'count_mode' bad value %r\n" % (
+                            config.count_mode,
+                        ))
+                        sys.stderr.flush()
+                        raise Pass()
+                    if config.count_mode == 0 and request['protocol_state'].upper() != "RCPT":
+                        if config.debug:
+                            sys.stderr.write(
+                                "Ignoring 'protocol_state' %r\n" % (
+                                    request['protocol_state'].upper(),
+                                )
+                            )
+                            sys.stderr.flush()
+                        raise Pass()
+                    if config.count_mode == 1 and request['protocol_state'].upper() != "DATA":
+                        if config.debug:
+                            sys.stderr.write(
+                                "Ignoring 'protocol_state' %r\n" % (
+                                    request['protocol_state'].upper(),
+                                )
+                            )
+                            sys.stderr.flush()
+                        raise Pass()
+                    if config.count_mode == 0:
+                        if config.debug or time.time() - self.last_deprecation_warning > 60:
+                            sys.stderr.write(
+                                "WARNING: the 'count_mode' parameter is set to 0. "
+                                "This is DEPRECATED. 'count_mode' should be set to 1 and postfix"
+                                " config edited as stated in the README or "
+                                "policyd-rate-limit.yaml(5)\n"
+                            )
+                            sys.stderr.flush()
+                            self.last_deprecation_warning = time.time()
+
                     # if user is authenticated, we filter by sasl username
                     if config.limit_by_sasl and u'sasl_username' in request:
                         id = request[u'sasl_username']
@@ -244,27 +285,49 @@ class Policyd(object):
                     # to the next section
                     else:
                         raise Pass()
+
+                    if request['protocol_state'].upper() == "RCPT":
+                        recipient_count = 1
+                    elif request['protocol_state'].upper() == "DATA":
+                        recipient_count = max(int(request["recipient_count"]), 1)
+
+                    # Custom limits per ID via SQL
+                    custom_limits = config.limits_by_id
+                    if config.sql_limits_by_id != "":
+                        try:
+                            cur.execute(config.sql_limits_by_id, [id])
+                            custom_limits[id] = ast.literal_eval(cur.fetchone()[0])
+                        except TypeError:
+                            custom_limits = config.limits_by_id
+                            if config.debug:
+                                sys.stderr.write(u"There is no limit rate in SQL for: %s\n" % (id))
+                                sys.stderr.flush()
+                    if config.debug:
+                        sys.stderr.write(u"Custom limit(s): %s\n" % custom_limits)
+                        sys.stderr.flush()
+
                     # Here we are limiting against sasl username, sender or source ip addresses.
                     # for each limit periods, we count the number of mails already send.
                     # if the a limit is reach, we change action to fail (deny the mail).
-                    for mail_nb, delta in config.limits_by_id.get(id, config.limits):
+                    for mail_nb, delta in custom_limits.get(id, config.limits):
                         cur.execute(
                             (
-                                "SELECT COUNT(*) FROM mail_count "
+                                "SELECT SUM(recipient_count) FROM mail_count "
                                 "WHERE id = %s AND date >= %s"
                             ) % ((config.format_str,)*2),
                             (id, int(time.time() - delta))
                         )
-                        nb = cur.fetchone()[0]
+                        nb = cur.fetchone()[0] or 0
                         if config.debug:
-                            sys.stderr.write("%03d/%03d hit since %ss\n" % (nb, mail_nb, delta))
+                            sys.stderr.write(
+                                "%03d/%03d hit since %ss\n" % (
+                                    nb + recipient_count, mail_nb, delta
+                                )
+                            )
                             sys.stderr.flush()
-                        print("nb " + str(nb))
-                        print(str(mail_nb))
-                        if nb >= mail_nb - mail_nb * .1:
+                        if nb + recipient_count >= mail_nb - mail_nb * .1:
                             utils.send_warning_report(id, nb)
-                            raise Pass()
-                        if nb >= mail_nb:
+                        if nb + recipient_count > mail_nb:
                             action = config.fail_action
                             if config.report and delta in config.report_limits:
                                 utils.hit(cur, delta, id)
@@ -277,8 +340,28 @@ class Policyd(object):
                         sys.stderr.write(u"insert id %s\n" % id)
                         sys.stderr.flush()
                     cur.execute(
-                        "INSERT INTO mail_count VALUES (%s, %s)" % ((config.format_str,)*2),
-                        (id, int(time.time()))
+                        "INSERT INTO mail_count VALUES (%s, %s, %s, %s, %s)" % (
+                                (config.format_str,)*5
+                        ),
+                        (
+                            id, int(time.time()), recipient_count,
+                            request.get("instance", "empty"), request['protocol_state']
+                        )
+                    )
+                # If action is a failure and using legacy mode, remove previous
+                # recorded event for this mail in the
+                # database. The mail has not been sent, we should not count any recipient
+                if (
+                    config.count_mode == 0 and
+                    action == config.fail_action and
+                    request['protocol_state'].upper() == "RCPT" and
+                    request.get("instance")
+                ):
+                    cur.execute(
+                        "DELETE FROM mail_count WHERE instance = %s AND protocol_state = %s" % (
+                                (config.format_str,)*2
+                        ),
+                        (request["instance"], request['protocol_state'])
                     )
         except utils.cursor.backend_module.Error as error:
             utils.cursor.del_db()
@@ -290,6 +373,7 @@ class Policyd(object):
             sys.stderr.flush()
         # return the result to the client
         self.socket_data_write[connection] = data.encode('UTF-8')
+
         # Wipe the read buffer (otherwise it'll be added up for eternity)
         self.socket_data_read[connection].clear()
         # Socket has been used, let's update its last_used time.

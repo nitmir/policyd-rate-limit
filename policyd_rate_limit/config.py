@@ -89,3 +89,6 @@ smtp_credentials = None
 
 # The time in seconds before an unused socket gets closed
 delay_to_close = 300
+
+# count mode. 0 for RCPT, 1 for DATA
+count_mode = 0

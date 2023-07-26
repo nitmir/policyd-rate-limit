@@ -400,7 +400,6 @@ def gen_report(cur):
         text.append("</table> <br /> -- policyd-rate-limit")
     return text
 
-
 def gen_totals_report(cur):
     cur.execute("SELECT id, date FROM mail_count")
     # list to sort ids by hits
@@ -510,7 +509,6 @@ def gen_warning_report(cur):
 
 
 def send_report(text, extraTo=""):
-
     # check that smtp_server is well formatted
     if isinstance(config.smtp_server, (list, tuple)):
         if len(config.smtp_server) >= 2:
@@ -551,6 +549,7 @@ def send_report(text, extraTo=""):
             msg['Subject'] = config.report_subject or ""
             msg['From'] = config.report_from or ""
             msg['To'] = rcpt
+
             msg.attach(MIMEText("\n".join(text), 'html'))
             server.sendmail(config.report_from or "", rcpt, msg.as_string())
     finally:
@@ -563,15 +562,64 @@ def database_init():
     with cursor() as cur:
         query = """CREATE TABLE IF NOT EXISTS mail_count (
       id varchar(40) NOT NULL,
-      date bigint NOT NULL
+      date bigint NOT NULL,
+      recipient_count int DEFAULT 1,
+      instance varchar(40) NOT NULL,
+      protocol_state varchar(10) NOT NULL
     );"""
+        if config.backend == MYSQL_DB:
+            query_limits = """CREATE TABLE IF NOT EXISTS rate_limits (
+              id int NOT NULL AUTO_INCREMENT,
+              limits varchar(255) NOT NULL,
+              PRIMARY KEY (id)
+            );"""
+        else:
+            query_limits = """CREATE TABLE IF NOT EXISTS rate_limits (
+              id int NOT NULL,
+              limits varchar(255) NOT NULL,
+              PRIMARY KEY (id)
+            );"""
+
         # if report is enable, also create the table for storing report datas
-        if config.report:
-            query_report = """CREATE TABLE IF NOT EXISTS limit_report (
+        query_report = """CREATE TABLE IF NOT EXISTS limit_report (
       id varchar(40) NOT NULL,
       delta int NOT NULL,
       hit int NOT NULL DEFAULT 0
     );"""
+        # Test the table version
+        try:
+            cur.execute("SELECT recipient_count FROM mail_count")
+        except cursor.backend_module.Error as error:
+            # If the table mail_count exists but the new column
+            # recipient_count does not, drop the table (it only
+            # contains temporary data). It will be recreated below.
+            if (
+                    (cursor.backend == MYSQL_DB and error.args[0] == 1054) or
+                    (
+                            cursor.backend == SQLITE_DB and
+                            error.args[0] == 'no such column: recipient_count'
+                    ) or
+                    (
+                            cursor.backend == PGSQL_DB and
+                            isinstance(error, cursor.backend_module.errors.UndefinedColumn)
+                    )
+
+            ):
+                cursor.get_db().commit()
+                cur.execute("DROP TABLE mail_count")
+            # Mysql table 'mail_count' doesn't exist
+            elif cursor.backend == MYSQL_DB and error.args[0] == 1146:
+                cursor.get_db().commit()
+            elif cursor.backend == SQLITE_DB and error.args[0] == 'no such table: mail_count':
+                cursor.get_db().commit()
+            elif (
+                    cursor.backend == PGSQL_DB and
+                    isinstance(error, cursor.backend_module.errors.UndefinedTable)
+            ):
+                cursor.get_db().commit()
+            else:
+                raise
+        # Create the table if needed
         try:
             if cursor.backend == MYSQL_DB:
                 # ignore possible warnings about the table already existing
@@ -579,6 +627,9 @@ def database_init():
             cur.execute(query)
             if config.report:
                 cur.execute(query_report)
+            if config.sql_limits_by_id and config.backend in [MYSQL_DB, PGSQL_DB]:
+                cur.execute(query_limits)
+
         finally:
             warnings.resetwarnings()
         try:
