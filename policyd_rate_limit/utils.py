@@ -525,7 +525,7 @@ def database_init():
             cur.execute(query)
             if config.report:
                 cur.execute(query_report)
-            if config.sql_limits_by_id != "" and (config.backend == MYSQL_DB or config.backend == PGSQL_DB):
+            if config.sql_limits_by_id and config.backend in [MYSQL_DB, PGSQL_DB]:
                 cur.execute(query_limits)
 
         finally:
