@@ -22,6 +22,7 @@ from policyd_rate_limit.utils import config
 if __name__ == "__main__":  # pragma: no branch
     parser = argparse.ArgumentParser()
     parser.add_argument("--clean", help="clean old records from the database", action="store_true")
+    parser.add_argument("--warn", help="warn useer useaga of email limit", action="store_true")
     parser.add_argument(
         "--get-config",
         help="return the value of a config parameter",
@@ -73,6 +74,12 @@ if __name__ == "__main__":  # pragma: no branch
         if args.clean:
             try:
                 utils.clean()
+            except ValueError as error:
+                sys.stderr.write("%s\n" % error)
+                sys.exit(8)
+        if args.warn:
+            try:
+                utils.warn()
             except ValueError as error:
                 sys.stderr.write("%s\n" % error)
                 sys.exit(8)

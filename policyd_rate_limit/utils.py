@@ -328,7 +328,11 @@ def clean():
     # remove old record older than 2*max_delta
     expired = int(time.time() - max_delta - max_delta)
     report_text = ""
+    report_totals_text = ""
     with cursor() as cur:
+        # if report_totals is True, generate report before deleting table contents.
+        if config.report_totals and config.report_to:
+            report_totals_text = gen_totals_report(cur)
         cur.execute("DELETE FROM mail_count WHERE date <= %s" % config.format_str, (expired,))
         print("%d records deleted" % cur.rowcount)
         # if report is True, generate a mail report
@@ -336,9 +340,11 @@ def clean():
             report_text = gen_report(cur)
         # The mail report has been successfully send, flush limit_report
         cur.execute("DELETE FROM limit_report")
-    # send report
+    # send reports
     if len(report_text) != 0:
         send_report(report_text)
+    if len(report_totals_text) != 0:
+        send_report(report_totals_text)
 
     try:
         if config.backend == PGSQL_DB:
@@ -366,54 +372,144 @@ def gen_report(cur):
     text = []
     if not config.report_only_if_needed or report:
         if report:
-            text = ["Below is the table of users who hit a limit since the last cleanup:", ""]
+            text = ["<strong>Below is the table of users who hit a limit since the last cleanup:</strong><br /><br />", ""]
             # dist to groups deltas by ids
             report_d = collections.defaultdict(list)
-            max_d = {'id': 2, 'delta': 5, 'hit': 3}
             for (id, delta, hit) in report:
                 report_d[id].append((delta, hit))
-                max_d['id'] = max(max_d['id'], len(id))
-                max_d['delta'] = max(max_d['delta'], len(str(delta)) + 1)
-                max_d['hit'] = max(max_d['hit'], len(str(hit)))
+
             # sort by hits
             report.sort(key=lambda x: x[2])
             # table header
-            text.append(
-                "|%s|%s|%s|" % (
-                    print_fw("id", max_d['id']),
-                    print_fw("delta", max_d['delta']),
-                    print_fw("hit", max_d['hit'])
-                )
-            )
-            # table header/data separation
-            text.append(
-                "|%s+%s+%s|" % (
-                    print_fw("", max_d['id'], filler='-'),
-                    print_fw("", max_d['delta'], filler='-'),
-                    print_fw("", max_d['hit'], filler='-')
-                )
-            )
+            text.append("<table><tr>")
+            text.append("<th>ID</th>")
+            text.append("<th>Delta</th>")
+            text.append("<th>Hit</th>")
+            text.append("</tr>")
 
             for (id, _, _) in report:
                 # sort by delta
                 report_d[id].sort()
                 for (delta, hit) in report_d[id]:
                     # add a table row
-                    text.append(
-                        "|%s|%s|%s|" % (
-                            print_fw(id, max_d['id'], align_left=False),
-                            print_fw("%ss" % delta, max_d['delta'], align_left=False),
-                            print_fw(hit, max_d['hit'], align_left=False)
-                        )
-                    )
+                    text.append("<tr><td>" + str(id) + "</td>")
+                    text.append("<td>" + str(delta) + "s</td>")
+                    text.append("<td>" + str(hit) + "</td></tr>")
         else:
             text = ["No user hit a limit since the last cleanup"]
-        text.extend(["", "-- ", "policyd-rate-limit"])
+        text.append("</table> <br /> -- policyd-rate-limit")
+    return text
+
+def gen_totals_report(cur):
+    cur.execute("SELECT id, date FROM mail_count")
+    # list to sort ids by hits
+    report = list(cur.fetchall())
+    text = []
+    if report:
+        text = ["<strong>Total quantity of emails sent since the last cleanup:</strong><br /><br />", ""]
+        # dist to groups deltas by ids
+        report_d = collections.defaultdict()
+        for (id, date ) in report:
+            if id in report_d.keys():
+                report_d[id] += 1
+            else:
+                report_d[id] = 1
+
+        # table header
+        text.append("<table><tr>")
+        text.append("<th>User/IP</th>")
+        text.append("<th>Count</th>")
+        text.append("</tr>")
+
+        for (id, count) in report_d.items():
+            # add a table row
+            text.append( "<tr><td>" + str(id) + "</td>")
+            text.append( "<td>" + str(count) + "</td></tr>")
+    text.append("</table> <br /> -- policyd-rate-limit")
     return text
 
 
-def send_report(text):
-    # check that smtp_server is wekk formated
+def warn():
+    with cursor() as cur:
+        if config.report:
+            report_recipients = gen_warning_report(cur)
+    # send reports
+    if report_recipients:
+        for (rec, data) in report_recipients.items():
+            send_report(data, rec)
+
+    try:
+        if config.backend == PGSQL_DB:
+            # setting autocommit to True disable the transations. This is needed to run VACUUM
+            cursor.get_db().autocommit = True
+        with cursor() as cur:
+            if config.backend == PGSQL_DB:
+                cur.execute("VACUUM ANALYZE")
+            elif config.backend == SQLITE_DB:
+                cur.execute("VACUUM")
+            elif config.backend == MYSQL_DB:
+                if config.report:
+                    cur.execute("OPTIMIZE TABLE mail_count, limit_report")
+                else:
+                    cur.execute("OPTIMIZE TABLE mail_count")
+    finally:
+        if config.backend == PGSQL_DB:
+            cursor.get_db().autocommit = False
+
+
+def gen_warning_report(cur):
+    cur.execute("SELECT id, date FROM mail_count")
+    # list to sort ids by hits
+    report = list(cur.fetchall())
+    emailRec = collections.defaultdict()
+
+    if report:
+        # dist to groups deltas by ids
+        report_d = collections.defaultdict()
+        for (id, date) in report:
+            if id in report_d.keys():
+                report_d[id] += 1
+            else:
+                report_d[id] = 1
+
+        for (id, count) in report_d.items():
+            text = []
+            name = str(id)
+            alert_level = 0
+
+            for limit, time_period in config.limits_by_id.get(u'recipient', config.limits):
+                msg = ""
+                msg2 = ""
+                if count >= limit * .9:
+                    msg = "<br />You are currently over 90% of the"
+                elif count >= limit * .75:
+                    msg = "<br />You are currently over 75% of the"
+                elif count >= limit * .5:
+                    msg = "<br />You are currently over 50% of the"
+
+                if time_period >= 86400:
+                    msg2 = " allowed email limit in a " + str(time_period / 86400) + " day period"
+                elif time_period >= 3600:
+                    msg2 = " allowed email limit in a " + str(time_period / 3600) + " hour period."
+                elif time_period >= 60:
+                    msg2 = " allowed email limit in a " + str(time_period / 60) + " minute period."
+                else:
+                    msg2 = " allowed email limit in a " + str(time_period) + " second period."
+
+                msg3 = "<br />Total emails sent: " + str(count) + "/" + str(limit) + "<br />"
+
+                if msg != "" and msg2 != "" and limit > alert_level:
+                    text.append(name)
+                    text.append(msg+msg2)
+                    text.append(msg3)
+                    emailRec[name] = text
+                    alert_level = limit
+
+    return emailRec
+
+
+def send_report(text, extraTo=""):
+    # check that smtp_server is well formatted
     if isinstance(config.smtp_server, (list, tuple)):
         if len(config.smtp_server) >= 2:
             server = smtplib.SMTP(config.smtp_server[0], config.smtp_server[1])
@@ -442,13 +538,19 @@ def send_report(text):
             report_to = [config.report_to]
         else:
             report_to = config.report_to
+
+        if extraTo != "":
+            report_to.append(extraTo)
+            print("Extra to " + str(extraTo))
+
         for rcpt in report_to:
             # Start building the mail report
             msg = MIMEMultipart()
             msg['Subject'] = config.report_subject or ""
             msg['From'] = config.report_from or ""
             msg['To'] = rcpt
-            msg.attach(MIMEText("\n".join(text), 'plain'))
+
+            msg.attach(MIMEText("\n".join(text), 'html'))
             server.sendmail(config.report_from or "", rcpt, msg.as_string())
     finally:
         print('report is sent')
