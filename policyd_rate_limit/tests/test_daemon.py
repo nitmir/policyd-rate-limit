@@ -156,7 +156,7 @@ class DaemonTestCase(TestCase):
     def test_bad_config(self):
         self.base_config["backend"] = 1000
         with test_utils.lauch(self.base_config, get_process=True) as p:
-            self.assertEqual(p.wait(), 5)
+            self.assertEqual(p.wait(timeout=10), 5)
 
     def test_get_config(self):
         with test_utils.lauch(
@@ -164,14 +164,14 @@ class DaemonTestCase(TestCase):
             get_process=True,
             options=["--get-config", "pidfile"]
         ) as p:
-            self.assertEqual(p.wait(), 0)
+            self.assertEqual(p.wait(timeout=10), 0)
             self.assertEqual(p.stdout.read(), self.base_config["pidfile"].encode())
         with test_utils.lauch(
             self.base_config,
             get_process=True,
             options=["--get-config", "sqlite_config.database"]
         ) as p:
-            self.assertEqual(p.wait(), 0)
+            self.assertEqual(p.wait(timeout=10), 0)
             self.assertEqual(
                 p.stdout.read(),
                 self.base_config["sqlite_config"]["database"].encode()
@@ -181,13 +181,13 @@ class DaemonTestCase(TestCase):
             get_process=True,
             options=["--get-config", "foo"]
         ) as p:
-            self.assertEqual(p.wait(), 1)
+            self.assertEqual(p.wait(timeout=10), 1)
         with test_utils.lauch(
             None,
             get_process=True,
             options=["--get-config", "pidfile"]
         ) as p:
-            self.assertEqual(p.wait(), 0)
+            self.assertEqual(p.wait(timeout=10), 0)
             self.assertEqual(
                 p.stdout.read(),
                 b'/var/run/policyd-rate-limit/policyd-rate-limit.pid'
@@ -195,7 +195,7 @@ class DaemonTestCase(TestCase):
 
     def test_no_config_file_found(self):
         with test_utils.lauch(None, get_process=True) as p:
-            self.assertEqual(p.wait(), 5)
+            self.assertEqual(p.wait(timeout=10), 5)
 
     def test_already_running(self):
         with test_utils.lauch(self.base_config, no_coverage=True, get_process=True) as p1:
@@ -207,17 +207,17 @@ class DaemonTestCase(TestCase):
         try:
             with test_utils.lauch(self.base_config, get_process=True) as p:
                 pass
-            self.assertEqual(p.wait(), 0)
+            self.assertEqual(p.wait(timeout=10), 0)
             with open(self.base_config["pidfile"], 'w') as f:
                 f.write("foo")
             with test_utils.lauch(self.base_config, get_process=True) as p:
                 pass
-            self.assertEqual(p.wait(), 0)
+            self.assertEqual(p.wait(timeout=10), 0)
             with open(self.base_config["pidfile"], 'w') as f:
                 f.write("")
             os.chmod(self.base_config["pidfile"], 0)
             with test_utils.lauch(self.base_config, get_process=True) as p:
-                self.assertEqual(p.wait(timeout=5), 6)
+                self.assertEqual(p.wait(timeout=10), 6)
         finally:
             try:
                 os.remove(self.base_config["pidfile"])
@@ -227,19 +227,19 @@ class DaemonTestCase(TestCase):
     def test_bad_socket_bind_address(self):
         self.base_config["SOCKET"] = ["toto", 1234]
         with test_utils.lauch(self.base_config, get_process=True, no_wait=True) as p:
-            self.assertEqual(p.wait(), 4)
+            self.assertEqual(p.wait(timeout=10), 4)
         self.base_config["SOCKET"] = ["192.168::1", 1234]
         with test_utils.lauch(self.base_config, get_process=True, no_wait=True) as p:
-            self.assertEqual(p.wait(), 6)
+            self.assertEqual(p.wait(timeout=10), 6)
 
     def test_clean(self):
         self.base_config["report_to"] = "foo@example.com"
         with test_utils.lauch(self.base_config, options=["--clean"], get_process=True) as p:
-            self.assertEqual(p.wait(), 0)
+            self.assertEqual(p.wait(timeout=10), 0)
         self.base_config["report_only_if_needed"] = False
         self.base_config["smtp_server"] = "localhost"
         with test_utils.lauch(self.base_config, options=["--clean"], get_process=True) as p:
-            self.assertEqual(p.wait(), 8)
+            self.assertEqual(p.wait(timeout=10), 8)
 
     def test_limits_by_id(self):
         self.base_config["limits_by_id"] = {'foo': [[2, 60]], 'bar': []}
