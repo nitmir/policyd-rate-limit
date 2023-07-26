@@ -46,11 +46,11 @@ class DaemonTestCase(TestCase):
         with test_utils.lauch(self.base_config) as cfg:
             self.base_test(cfg)
 
-    # travis CI has no IPv6 support
-    #def test_main_afinet6_socket(self):
-    #    self.base_config["SOCKET"] = ["::1", 27184]
-    #    with test_utils.lauch(self.base_config) as cfg:
-    #        self.base_test(cfg)
+    # travis CI/Github Action has no IPv6 support
+    # def test_main_afinet6_socket(self):
+    #     self.base_config["SOCKET"] = ["::1", 27184]
+    #     with test_utils.lauch(self.base_config) as cfg:
+    #         self.base_test(cfg)
 
     def test_no_debug_no_report(self):
         self.base_config["debug"] = False
@@ -217,7 +217,7 @@ class DaemonTestCase(TestCase):
                 f.write("")
             os.chmod(self.base_config["pidfile"], 0)
             with test_utils.lauch(self.base_config, get_process=True) as p:
-                self.assertEqual(p.wait(), 6)
+                self.assertEqual(p.wait(timeout=5), 6)
         finally:
             try:
                 os.remove(self.base_config["pidfile"])
