@@ -16,6 +16,8 @@ import yaml
 import tempfile
 import subprocess
 import time
+import string
+import random
 from contextlib import contextmanager
 
 
@@ -28,9 +30,9 @@ reverse_client_name=mail.example.com
 helo_name=mail.example.com
 sender=bar@example.com
 recipient=foo@example.com
-recipient_count=0
+recipient_count=%(recipient_count)s
 queue_id=
-instance=fd3.57cea9c4.143ea.0
+instance=%(instance)s
 size=0
 etrn_domain=
 stress=
@@ -48,16 +50,31 @@ encryption_keysize=256
 """
 
 
-def postfix_request(sasl_username="", client_address="127.0.0.1", protocol_state="RCPT"):
+def postfix_request(
+        sasl_username="", client_address="127.0.0.1", protocol_state="RCPT",
+        instance=None, recipient_count=None,
+):
+    if instance is None:
+        letters = string.ascii_letters + string.digits + '.'
+        instance = ''.join(random.choice(letters) for _ in range(16))
+    if recipient_count is None:
+        if protocol_state == "DATA":
+            recipient_count = 1
+        else:
+            recipient_count = 0
     return (POSTFIX_TEMPLATE % {
                 "sasl_username": sasl_username,
                 "client_address": client_address,
-                "protocol_state": protocol_state
+                "protocol_state": protocol_state,
+                "instance": instance,
+                "recipient_count": recipient_count,
             }).encode("utf-8")
 
 
 @contextmanager
 def sock(addr):
+    if isinstance(addr, list):
+        addr = tuple(addr)
     if isinstance(addr, str):
         s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     elif '.' in addr[0]:
@@ -73,10 +90,15 @@ def sock(addr):
         s.close()
 
 
-def send_policyd_request(addr, sasl_username="", client_address="127.0.0.1", protocol_state="RCPT"):
+def send_policyd_request(
+        addr, sasl_username="", client_address="127.0.0.1", protocol_state="RCPT",
+        instance=None, recipient_count=None,
+):
     with sock(addr) as s:
         s.send(
-            postfix_request(sasl_username, client_address, protocol_state)
+            postfix_request(
+                sasl_username, client_address, protocol_state, instance, recipient_count
+            )
         )
         data = s.recv(1024)
         return data
@@ -92,7 +114,7 @@ def gen_config(new_config):
         os.path.join(os.path.dirname(__file__), '..', 'policyd-rate-limit.yaml')
     )
     with open(default_config) as f:
-        config = yaml.load(f)
+        config = yaml.load(f, Loader=yaml.SafeLoader)
     config.update(new_config)
     cfg_path = tempfile.mktemp('.yaml')
     with open(cfg_path, 'w') as f:
@@ -156,7 +178,7 @@ def lauch(new_config, get_process=False, options=None, no_coverage=False, no_wai
     try:
         if cfg_path:
             with open(cfg_path) as f:
-                cfg = yaml.load(f)
+                cfg = yaml.load(f, Loader=yaml.SafeLoader)
             if not no_wait:
                 time.sleep(0.01)
                 for i in range(100):

@@ -1,0 +1,9 @@
+[Unit]
+Description=Clean policyd rate limit database daily
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+
+[Install]
+WantedBy=timers.target

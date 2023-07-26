@@ -30,6 +30,7 @@ class DaemonTestCase(TestCase):
             report_limits=[60, 86400],
             user="root",
             group="root",
+            count_mode=0,
         )
 
     def tearDown(self):
@@ -41,20 +42,70 @@ class DaemonTestCase(TestCase):
             self.base_test(cfg)
 
     def test_main_afinet_socket(self):
-        self.base_config["SOCKET"] = ("127.0.0.1", 27184)
+        self.base_config["SOCKET"] = ["127.0.0.1", 27184]
         with test_utils.lauch(self.base_config) as cfg:
             self.base_test(cfg)
 
-    def test_main_afinet6_socket(self):
-        self.base_config["SOCKET"] = ("::1", 27184)
-        with test_utils.lauch(self.base_config) as cfg:
-            self.base_test(cfg)
+    # travis CI/Github Action has no IPv6 support
+    # def test_main_afinet6_socket(self):
+    #     self.base_config["SOCKET"] = ["::1", 27184]
+    #     with test_utils.lauch(self.base_config) as cfg:
+    #         self.base_test(cfg)
 
     def test_no_debug_no_report(self):
         self.base_config["debug"] = False
         self.base_config["report"] = False
         with test_utils.lauch(self.base_config) as cfg:
             self.base_test(cfg)
+
+    def test_limit(self):
+        with test_utils.lauch(self.base_config) as cfg:
+            for i in range(10):
+                data = test_utils.send_policyd_request(cfg["SOCKET"], sasl_username="test")
+                self.assertEqual(data.strip(), b"action=dunno")
+            # the eleventh counted requests should fail
+            data = test_utils.send_policyd_request(cfg["SOCKET"], sasl_username="test")
+            self.assertEqual(data.strip(), b"action=defer_if_permit Rate limit reach, retry later")
+
+    def test_limit_batch(self):
+        with test_utils.lauch(self.base_config) as cfg:
+            # Send a batch of mails
+            for i in range(10):
+                data = test_utils.send_policyd_request(
+                    cfg["SOCKET"], sasl_username="test", instance="test"
+                )
+                self.assertEqual(data.strip(), b"action=dunno")
+            # the eleventh counted requests should fail and the 10 previous should be discard
+            data = test_utils.send_policyd_request(
+                cfg["SOCKET"], sasl_username="test", instance="test"
+            )
+            self.assertEqual(data.strip(), b"action=defer_if_permit Rate limit reach, retry later")
+            # The limit should have be reverted (cf instance)
+            for i in range(10):
+                data = test_utils.send_policyd_request(cfg["SOCKET"], sasl_username="test")
+                self.assertEqual(data.strip(), b"action=dunno")
+            # the eleventh counted requests should fail
+            data = test_utils.send_policyd_request(cfg["SOCKET"], sasl_username="test")
+            self.assertEqual(data.strip(), b"action=defer_if_permit Rate limit reach, retry later")
+
+    def test_limit_batch2(self):
+        self.base_config["count_mode"] = 1
+        with test_utils.lauch(self.base_config) as cfg:
+            # Send a batch of mails
+            data = test_utils.send_policyd_request(
+                cfg["SOCKET"], sasl_username="test", protocol_state="DATA", recipient_count=11
+            )
+            self.assertEqual(data.strip(), b"action=defer_if_permit Rate limit reach, retry later")
+            # The limit should have be reverted (cf instance)
+            data = test_utils.send_policyd_request(
+                cfg["SOCKET"], sasl_username="test", protocol_state="DATA", recipient_count=10
+            )
+            self.assertEqual(data.strip(), b"action=dunno")
+            # the eleventh counted requests should fail
+            data = test_utils.send_policyd_request(
+                cfg["SOCKET"], sasl_username="test", protocol_state="DATA", recipient_count=1
+            )
+            self.assertEqual(data.strip(), b"action=defer_if_permit Rate limit reach, retry later")
 
     def test_slow_connection(self):
         with test_utils.lauch(self.base_config) as cfg:
@@ -166,7 +217,7 @@ class DaemonTestCase(TestCase):
                 f.write("")
             os.chmod(self.base_config["pidfile"], 0)
             with test_utils.lauch(self.base_config, get_process=True) as p:
-                self.assertEqual(p.wait(), 6)
+                self.assertEqual(p.wait(timeout=5), 6)
         finally:
             try:
                 os.remove(self.base_config["pidfile"])
@@ -174,10 +225,10 @@ class DaemonTestCase(TestCase):
                 pass
 
     def test_bad_socket_bind_address(self):
-        self.base_config["SOCKET"] = ("toto", 1234)
+        self.base_config["SOCKET"] = ["toto", 1234]
         with test_utils.lauch(self.base_config, get_process=True, no_wait=True) as p:
             self.assertEqual(p.wait(), 4)
-        self.base_config["SOCKET"] = ("192.168::1", 1234)
+        self.base_config["SOCKET"] = ["192.168::1", 1234]
         with test_utils.lauch(self.base_config, get_process=True, no_wait=True) as p:
             self.assertEqual(p.wait(), 6)
 

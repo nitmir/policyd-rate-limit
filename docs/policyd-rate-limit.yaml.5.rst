@@ -124,6 +124,14 @@ Settings
   if yes set ["user", "password"], else null. The default is null.
 
 
+**count_mode**
+  How sent mail are counted. Set to **0**, each RCPT TO are counted individualy.
+  This is the how it was done historically. If set to 0, the postfix check_policy_service must be set in
+  smtpd_recipient_restrictions. This is deprecated and should not be used anymore.
+  Set to **1** recipient are counted in the DATA stage. The postfix parameter check_policy_service must be
+  defined in smtpd_data_restrictions. This is the new default.
+
+
 See also
 ========
 

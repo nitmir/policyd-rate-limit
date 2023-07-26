@@ -36,7 +36,7 @@ Setup
 For example, for postfix 3.0 and later, you can set in postfix **/etc/postfix/main.cf**
 configuration file::
 
-  smtpd_recipient_restrictions =
+  smtpd_data_restrictions =
     ...,
     check_policy_service { unix:ratelimit/policy, default_action=DUNNO },
     ...
@@ -47,7 +47,7 @@ and will accept mail if policyd-rate-limit become unavailable.
 
 On previous postfix versions, you must use::
 
-  smtpd_recipient_restrictions =
+  smtpd_data_restrictions =
     ...,
     check_policy_service unix:ratelimit/policy,
     ...

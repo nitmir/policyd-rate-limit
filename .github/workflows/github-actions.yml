@@ -1,0 +1,46 @@
+name: policyd-rate-limit
+run-name: ${{ github.actor }} is running policyd-rate-limit CI tests
+on: [push]
+jobs:
+  flake8:
+    runs-on: ubuntu-latest
+    container:
+      image: python:bookworm
+    steps:
+      - uses: actions/checkout@v3
+      - run: pip install tox
+      - run: apt-get update && apt-get install -y --no-install-recommends sudo
+      - run: useradd --uid 1000 testuser && mkdir -p /home/testuser && chown testuser -R . /home/testuser
+      - run: sudo -u testuser tox -e flake8
+  check_rst:
+    runs-on: ubuntu-latest
+    container:
+      image: python:bookworm
+    steps:
+      - uses: actions/checkout@v3
+      - run: pip install tox
+      - run: apt-get update && apt-get install -y --no-install-recommends sudo
+      - run: useradd --uid 1000 testuser && mkdir -p /home/testuser && chown testuser -R . /home/testuser
+      - run: sudo -u testuser tox -e check_rst
+  tests:
+    runs-on: ubuntu-latest
+    container:
+      image: python:bookworm
+    steps:
+      - uses: actions/checkout@v3
+      - run: pip install tox
+      - run: apt-get update && apt-get install -y --no-install-recommends sudo
+      - run: useradd --uid 1000 testuser && mkdir -p /home/testuser && chown testuser -R . /home/testuser
+      - run: sudo -u testuser tox -e py3
+  coverage:
+    runs-on: ubuntu-latest
+    container:
+      image: python:bookworm
+    steps:
+      - uses: actions/checkout@v3
+      - run: pip install tox
+      - run: apt-get update && apt-get install -y --no-install-recommends sudo
+      - run: useradd --uid 1000 testuser && mkdir -p /home/testuser && chown testuser -R . /home/testuser
+      - run: sudo --preserve-env=COVERAGE_TOKEN -u testuser tox -e coverage
+        env:
+          COVERAGE_TOKEN: ${{ secrets.COVERAGE_TOKEN }}
