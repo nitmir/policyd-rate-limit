@@ -257,8 +257,9 @@ class Policyd(object):
                         if config.debug or time.time() - self.last_deprecation_warning > 60:
                             sys.stderr.write(
                                 "WARNING: the 'count_mode' parameter is set to 0. "
-                                "This is DEPRECATED. 'count_mode' should be set to 1 and postfix config"
-                                " edited as stated in the README or policyd-rate-limit.yaml(5)\n"
+                                "This is DEPRECATED. 'count_mode' should be set to 1 and postfix"
+                                " config edited as stated in the README or "
+                                "policyd-rate-limit.yaml(5)\n"
                             )
                             sys.stderr.flush()
                             self.last_deprecation_warning = time.time()

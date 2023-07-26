@@ -51,7 +51,7 @@ publish_pypi_release:
 	python setup.py sdist upload --sign
 
 test_venv/bin/python:
-	virtualenv -p python3 test_venv
+	python3 -m venv test_venv
 	test_venv/bin/pip3 install -U -r requirements-dev.txt
 
 test_venv: test_venv/bin/python

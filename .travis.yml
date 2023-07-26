@@ -1,15 +1,13 @@
 language: python
 matrix:
   include:
-  - python: "3.4"
+  - python: "3.9"
     env: TOX_ENV=flake8
-  - python: "3.4"
+  - python: "3.9"
     env: TOX_ENV=check_rst
-  - python: "3.4"
-    env: TOX_ENV=py34
-  - python: "3.5"
-    env: TOX_ENV=py35
-  - python: "3.4"
+  - python: "3.9"
+    env: TOX_ENV=py39
+  - python: "3.9"
     env: TOX_ENV=coverage
 cache:
   directories:
@@ -22,4 +20,3 @@ script:
   - tox -e $TOX_ENV
 after_script:
   - cat tox_log/*.log
-
