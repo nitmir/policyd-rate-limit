@@ -14,6 +14,7 @@ import socket
 import time
 import select
 import traceback
+import ast
 
 from policyd_rate_limit import utils
 from policyd_rate_limit.utils import config
@@ -281,14 +282,31 @@ class Policyd(object):
                     # to the next section
                     else:
                         raise Pass()
+
                     if request['protocol_state'].upper() == "RCPT":
                         recipient_count = 1
                     elif request['protocol_state'].upper() == "DATA":
                         recipient_count = max(int(request["recipient_count"]), 1)
+
+                    # Custom limits per ID via SQL
+                    custom_limits = config.limits_by_id
+                    if config.sql_limits_by_id != "":
+                        try:
+                            cur.execute(config.sql_limits_by_id, [id])
+                            custom_limits[id] = ast.literal_eval(cur.fetchone()[0])
+                        except TypeError:
+                            custom_limits = config.limits_by_id
+                            if config.debug:
+                                sys.stderr.write(u"There is no limit rate in SQL for: %s\n" % (id))
+                                sys.stderr.flush()
+                    if config.debug:
+                        sys.stderr.write(u"Custom limit(s): %s\n" % custom_limits)
+                        sys.stderr.flush()
+
                     # Here we are limiting against sasl username, sender or source ip addresses.
                     # for each limit periods, we count the number of mails already send.
                     # if the a limit is reach, we change action to fail (deny the mail).
-                    for mail_nb, delta in config.limits_by_id.get(id, config.limits):
+                    for mail_nb, delta in custom_limits.get(id, config.limits):
                         cur.execute(
                             (
                                 "SELECT SUM(recipient_count) FROM mail_count "
@@ -350,6 +368,7 @@ class Policyd(object):
             sys.stderr.flush()
         # return the result to the client
         self.socket_data_write[connection] = data.encode('UTF-8')
+
         # Wipe the read buffer (otherwise it'll be added up for eternity)
         self.socket_data_read[connection].clear()
         # Socket has been used, let's update its last_used time.

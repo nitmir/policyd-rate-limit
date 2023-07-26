@@ -465,6 +465,19 @@ def database_init():
       instance varchar(40) NOT NULL,
       protocol_state varchar(10) NOT NULL
     );"""
+        if config.backend == MYSQL_DB:
+            query_limits = """CREATE TABLE IF NOT EXISTS rate_limits (
+              id int NOT NULL AUTO_INCREMENT,
+              limits varchar(255) NOT NULL,
+              PRIMARY KEY (id)
+            );"""
+        else:
+            query_limits = """CREATE TABLE IF NOT EXISTS rate_limits (
+              id int NOT NULL,
+              limits varchar(255) NOT NULL,
+              PRIMARY KEY (id)
+            );"""
+
         # if report is enable, also create the table for storing report datas
         query_report = """CREATE TABLE IF NOT EXISTS limit_report (
       id varchar(40) NOT NULL,
@@ -512,6 +525,9 @@ def database_init():
             cur.execute(query)
             if config.report:
                 cur.execute(query_report)
+            if config.sql_limits_by_id and config.backend in [MYSQL_DB, PGSQL_DB]:
+                cur.execute(query_limits)
+
         finally:
             warnings.resetwarnings()
         try:
