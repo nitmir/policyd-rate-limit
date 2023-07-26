@@ -1,6 +1,11 @@
 .PHONY: clean build install dist uninstall
 VERSION=`python3 setup.py -V`
 
+WHL_FILES := $(wildcard dist/*.whl)
+WHL_ASC := $(WHL_FILES:=.asc)
+DIST_FILE := $(wildcard dist/*.tar.gz)
+DIST_ASC := $(DIST_FILE:=.asc)
+
 build:
 	python3 setup.py build
 
@@ -47,9 +52,6 @@ man_files:
 dist:
 	python3 setup.py sdist
 
-publish_pypi_release:
-	python setup.py sdist upload --sign
-
 test_venv/bin/python:
 	python3 -m venv test_venv
 	test_venv/bin/pip3 install -U -r requirements-dev.txt
@@ -61,3 +63,14 @@ coverage: clean_coverage test_venv
 	export PATH=test_venv/bin/:$$PATH; echo $$PATH; pytest
 	test_venv/bin/coverage html
 	test_venv/bin/coverage report
+
+sign_release: $(WHL_ASC) $(DIST_ASC)
+
+dist/%.asc:
+	gpg --detach-sign -a $(@:.asc=)
+
+test_venv/bin/twine: test_venv
+	test_venv/bin/pip install twine
+
+publish_pypi_release: test_venv test_venv/bin/twine dist sign_release
+	test_venv/bin/twine upload --sign dist/*
