@@ -23,7 +23,7 @@ package:
 Depending of the backend storage you planning to use, you may need to install additional packages.
 (The default settings use the sqlite3 bakends and do not need extra packages).
 
-* `mysqldb <https://pypi.python.org/pypi/MySQL-python>`_
+* `mysqldb <https://pypi.org/project/mysqlclient/>`_
   (``sudo apt-get install python3-mysqldb`` on debian like systems) for the mysql backend.
 * `psycopg2 <https://pypi.python.org/pypi/psycopg2>`_
   (``sudo apt-get install python3-psycopg2`` on debian like systems) fot the postgresql backend
