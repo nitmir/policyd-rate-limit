@@ -334,8 +334,9 @@ def clean():
         # if report is True, generate a mail report
         if config.report and config.report_to:
             report_text = gen_report(cur)
-        # The mail report has been successfully send, flush limit_report
-        cur.execute("DELETE FROM limit_report")
+        if config.report:
+            # The mail report has been successfully send, flush limit_report
+            cur.execute("DELETE FROM limit_report")
     # send report
     if len(report_text) != 0:
         send_report(report_text)
