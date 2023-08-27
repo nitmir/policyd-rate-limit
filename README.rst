@@ -145,6 +145,10 @@ The ``.yaml`` are the new configuration format using the YAML syntax.
   * ``1``: recipient are counted in the DATA stage. The postfix parameter check_policy_service must be
     defined in smtpd_data_restrictions.
     This is the new default.
+  * ``2``: Number of submited mails a counted, not recipients. The postfix parameter
+    check_policy_service must be defined in smtpd_data_restrictions.
+    This means that if a use send a single mail with 100 recipient, it's count for 1
+    in the quota instead of 100.
 
 Postfix settings
 ----------------

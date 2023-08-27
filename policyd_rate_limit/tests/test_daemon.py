@@ -107,6 +107,22 @@ class DaemonTestCase(TestCase):
             )
             self.assertEqual(data.strip(), b"action=defer_if_permit Rate limit reach, retry later")
 
+    def test_limit_batch3(self):
+        self.base_config["count_mode"] = 2
+        with test_utils.lauch(self.base_config) as cfg:
+            for _ in range(10):
+                # a single mail with many recipients
+                data = test_utils.send_policyd_request(
+                    cfg["SOCKET"], sasl_username="test", protocol_state="DATA", recipient_count=100
+                )
+                # it should be accepted
+                self.assertEqual(data.strip(), b"action=dunno")
+            # The 11th mail should be denied
+            data = test_utils.send_policyd_request(
+                cfg["SOCKET"], sasl_username="test", protocol_state="DATA", recipient_count=1
+            )
+            self.assertEqual(data.strip(), b"action=defer_if_permit Rate limit reach, retry later")
+
     def test_slow_connection(self):
         with test_utils.lauch(self.base_config) as cfg:
             with test_utils.sock(cfg["SOCKET"]) as s:

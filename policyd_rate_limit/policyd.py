@@ -230,7 +230,7 @@ class Policyd(object):
                         sys.stderr.write("Attribute 'protocol_state' not defined\n")
                         sys.stderr.flush()
                         raise Pass()
-                    if config.count_mode not in {0, 1}:
+                    if config.count_mode not in {0, 1, 2}:
                         sys.stderr.write("Settings 'count_mode' bad value %r\n" % (
                             config.count_mode,
                         ))
@@ -245,7 +245,7 @@ class Policyd(object):
                             )
                             sys.stderr.flush()
                         raise Pass()
-                    if config.count_mode == 1 and request['protocol_state'].upper() != "DATA":
+                    if config.count_mode in {1, 2} and request['protocol_state'].upper() != "DATA":
                         if config.debug:
                             sys.stderr.write(
                                 "Ignoring 'protocol_state' %r\n" % (
@@ -286,7 +286,10 @@ class Policyd(object):
                     if request['protocol_state'].upper() == "RCPT":
                         recipient_count = 1
                     elif request['protocol_state'].upper() == "DATA":
-                        recipient_count = max(int(request["recipient_count"]), 1)
+                        if config.count_mode == 1:
+                            recipient_count = max(int(request["recipient_count"]), 1)
+                        else:
+                            recipient_count = 1
 
                     # Custom limits per ID via SQL
                     custom_limits = config.limits_by_id
